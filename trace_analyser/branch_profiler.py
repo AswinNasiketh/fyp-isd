@@ -16,8 +16,12 @@ class BranchProfileEntry:
         self.branch_target = target
         self.num_branch_taken = 1
 
+
     def increment_taken_count(self):
         self.num_branch_taken += 1
+
+    def shift_count_right(self):
+        self.num_branch_taken = self.num_branch_taken >> 1
 
 class BranchProfile:
     def __init__(self):
@@ -46,6 +50,15 @@ class BranchProfile:
         self.process_next_iter = False
         self.addr_next_iter = ""
 
+        self.branch_counter_limit = 16
+
+    def get_n_most_executed_branches(self, n):
+        tmp_branches = self.branches.copy()
+
+        sorted_branches = tmp_branches.sort(key= lambda b : b.num_branch_taken)
+        return sorted_branches[0:n]
+
+
     def is_branch_cached(self, addr):
         for branch_profile in self.branches:
             if branch_profile.branch_instr_addr == addr:
@@ -60,6 +73,10 @@ class BranchProfile:
         self.process_next_iter = True
         self.addr_next_iter = addr
 
+    def shift_all_counters(self):
+        for profile in self.branches:
+            profile.shift_count_right()
+    
     def process_trace_line(self, line):
         fields = line.split() #splits line into list, delimiter is spaces by default
 
@@ -76,6 +93,8 @@ class BranchProfile:
         branch_entry = self.is_branch_cached(instr_addr)
         if branch_entry != False:
             branch_entry.increment_taken_count()
+            if branch_entry.num_branch_taken > self.branch_counter_limit:
+                self.shift_all_counters()
         else:
             #check if backward branch and add to list
             opcode = fields[1]
