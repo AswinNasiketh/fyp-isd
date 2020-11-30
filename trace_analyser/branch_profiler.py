@@ -55,9 +55,11 @@ class BranchProfile:
     def get_n_most_executed_branches(self, n):
         tmp_branches = self.branches.copy()
 
-        sorted_branches = tmp_branches.sort(key= lambda b : b.num_branch_taken)
-        return sorted_branches[0:n]
-
+        tmp_branches.sort(key= lambda b : b.num_branch_taken, reverse=True)
+        if n > len(tmp_branches):
+            return tmp_branches
+        else:
+            return tmp_branches[0:n]
 
     def is_branch_cached(self, addr):
         for branch_profile in self.branches:
