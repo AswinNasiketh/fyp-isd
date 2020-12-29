@@ -1,5 +1,4 @@
 from trace_utils import TraceLine
-from branch_profiler import BranchProfileEntry
 #data container class
 class DFGraphEdge:
     
@@ -27,12 +26,22 @@ class DFGraph:
     def print_edges(self):
         for edge in self.adjLst:
             print("Edge from:", edge.fromNode, "Edge To:", edge.toNode)
+    
+    def get_output_nodes(self):
+        intermediate_nodes = []
+        for edge in self.adjLst:
+            if not edge.fromNode in intermediate_nodes:
+                intermediate_nodes.append(edge.fromNode)
+
+        allNodes = [i for i in range(len(self.nodeLst))]
+        outputNodes = [i for i in allNodes if not i in intermediate_nodes]
+        return outputNodes
 
 store_instructions = ["sw", "sh", "sd", "sb"]
 
-def createDFGraph(inst_mem, branch_profile):
-    seq_start_addr = int(branch_profile.branch_target, base=16)
-    seq_stop_addr = int(branch_profile.branch_instr_addr, base=16)
+def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
+    # seq_start_addr = int(branch_profile.branch_target, base=16)
+    # seq_stop_addr = int(branch_profile.branch_instr_addr, base=16)
 
     reg_file = {}
 

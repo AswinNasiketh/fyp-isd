@@ -85,13 +85,15 @@ class BranchProfile:
         instr_addr = fields[0].split('=')[1] 
         # print(instr_addr)
 
+        new_seq_identified = None
         #processing for previous line if required
         if self.process_next_iter:
             self.process_next_iter = False
             #only add backward branches
             if hex2sint(instr_addr) < hex2sint(self.addr_next_iter):
-                self.add_new_branch_profile(self.addr_next_iter, instr_addr)           
-               
+                self.add_new_branch_profile(self.addr_next_iter, instr_addr)  
+                new_seq_identified = self.addr_next_iter, instr_addr    
+            
         branch_entry = self.is_branch_cached(instr_addr)
         if branch_entry != False:
             branch_entry.increment_taken_count()
@@ -159,7 +161,8 @@ class BranchProfile:
                     
                     if rs1_val >= rs2_val:
                         self.process_on_next_line(instr_addr)
-
+                
+        return new_seq_identified
     def print_profile(self):
         for entry in self.branches:
             print("Branch Instr Addr:", entry.branch_instr_addr,
@@ -171,4 +174,3 @@ class BranchProfile:
             for entry in self.branches:
                 write_string = "Branch Instr Addr: " + entry.branch_instr_addr + ", Branch Target: " + entry.branch_target + ", Number of times taken: " + str(entry.num_branch_taken) + "\n"
                 writer.write(write_string)
-
