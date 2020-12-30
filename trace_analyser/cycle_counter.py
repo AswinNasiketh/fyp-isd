@@ -1,4 +1,5 @@
-from latency_mappings import *
+from trace_analyser.latency_mappings import *
+from trace_analyser.trace_utils import get_instr_addr
 
 #This class will measure the improvement in cycle count
 class CycleCounter:
@@ -14,7 +15,7 @@ class CycleCounter:
     def count_line(self, trace_line, accelerated_seqs, inst_mem, seq_profiles):
         count_in_accelerated = True
         pc_addr = int(trace_line.split()[0].split("=")[-1] , base=16)
-        instr = inst_mem[trace_line.split()[0].split("=")[-1]].opcode
+        instr = inst_mem[get_instr_addr(trace_line)].opcode
 
         
         for seq in accelerated_seqs:            
@@ -26,7 +27,7 @@ class CycleCounter:
             if pc_addr == range_start:
                 self.accelerated_cycles += seq_profiles[seq.branch_address].acc_time
 
-        in_order_instr_lat = func2latcpu[ins2funccpu[instr]]
+        in_order_instr_lat = get_ins_lat_cpu(instr)
         self.non_accelerated_cycles += in_order_instr_lat
         if count_in_accelerated:
             self.accelerated_cycles += in_order_instr_lat
@@ -34,3 +35,5 @@ class CycleCounter:
     def print_cycles(self):
         print("Non accelerated cycles", self.non_accelerated_cycles)
         print("Accelerated cycles", self.accelerated_cycles)
+
+        percentage_improvement = (1.0 - (float(self.non_accelerated_cycles)/float(self.accelerated_cycles))) * 100

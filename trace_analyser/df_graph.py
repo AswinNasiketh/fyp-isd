@@ -1,4 +1,4 @@
-from trace_utils import TraceLine
+from trace_analyser.trace_utils import TraceLine
 #data container class
 class DFGraphEdge:
     
@@ -37,25 +37,27 @@ class DFGraph:
         outputNodes = [i for i in allNodes if not i in intermediate_nodes]
         return outputNodes
 
-store_instructions = ["sw", "sh", "sd", "sb"]
+fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr"] #first argument as input instructions
 
 def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
-    # seq_start_addr = int(branch_profile.branch_target, base=16)
-    # seq_stop_addr = int(branch_profile.branch_instr_addr, base=16)
+    seq_start_addr = int(seq_start_addr, base=16)
+    seq_stop_addr = int(seq_stop_addr, base=16)
 
     reg_file = {}
 
     df_graph = DFGraph()
 
-    for addr in range(seq_start_addr, seq_stop_addr, 4):
+    for addr in inst_mem.keys():
+        if int(addr) < seq_start_addr or int(addr) >= seq_stop_addr:
+            continue
         # print(hex(addr)[2:])
-        instr = inst_mem[str(hex(addr)[2:])]
+        instr = inst_mem[addr]
         
         nodeID = df_graph.addNode(instr.opcode)
         
         start_index = 1
 
-        for str_instr in store_instructions:
+        for str_instr in fai_instructions:
             if str_instr in instr.opcode:
                 start_index = 0
                 break

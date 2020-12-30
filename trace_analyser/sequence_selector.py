@@ -45,7 +45,7 @@ class SequenceSelector:
         for addr in branch_addresses:
             acc_advantage.append((addr, seq_profiles[addr].cpu_time - seq_profiles[addr].acc_time))
         
-        acc_advantage.sort(key= lambda x: x[1])
+        acc_advantage.sort(key= lambda x: x[1], reverse=True)
         #trim accerating sequences to number of available accelerators
         acc_advantage = acc_advantage[0:self.num_accelerators]
         #extract branch instruction addresses

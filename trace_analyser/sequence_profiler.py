@@ -1,5 +1,5 @@
-from df_graph import *
-from latency_mappings import *
+from trace_analyser.df_graph import *
+from trace_analyser.latency_mappings import *
 
 class SequenceProfileEntry:
     def __init__(self, cpu_time, acc_time):
@@ -10,19 +10,22 @@ def find_node_depth(node, graph, cpu = False):
     if "inp" in graph.nodeLst[node]:
         return 0
     
-    inputNodes = [edge.toNode for edge in graph.adjLst if edge.toNode == node]
+    inputNodes = [edge.fromNode for edge in graph.adjLst if edge.toNode == node]
     inputNodeDepths = []
     for inpNode in inputNodes:
-        inputNodeDepths = find_node_depth(inpNode, graph, cpu)
+        inputNodeDepths.append(find_node_depth(inpNode, graph, cpu))
+    
+    # print(inputNodeDepths)
 
     if cpu:
-        func2latcpu[ins2funccpu[graph.nodeLst[node]]] + max(inputNodeDepths)
+        return get_ins_lat_cpu(graph.nodeLst[node]) + max(inputNodeDepths)
     else:
-        func2latacc[ins2funcacc[graph.nodeLst[node]]] + max(inputNodeDepths)
+        return get_ins_lat_acc(graph.nodeLst[node]) + max(inputNodeDepths)
 
 
 
 def profile_seq(inst_mem, start_addr, end_addr):
+
     df_graph = createDFGraph(inst_mem, start_addr, end_addr)
     outputNodes = df_graph.get_output_nodes()
 

@@ -15,6 +15,11 @@ def main():
     instr_addr = ''
     with open('trace_files/sim4.trace', 'r') as reader:
         for line in reader:
+            if line[0:2] != "pc":
+                continue
+            instr_addr = get_instr_addr(line)
+            inst_mem[instr_addr] = TraceLine(line)
+            # print(inst_mem)
             cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles)
             new_seq_addresses = branch_profile.process_trace_line(line)
 
@@ -23,8 +28,6 @@ def main():
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
 
             sequence_selector.update_accelerated_sequences(line, branch_profile, sequence_profiles)
-            instr_addr = get_instr_addr(line)
-            inst_mem[instr_addr] = TraceLine(line)
 
             
     print("Profiling done")

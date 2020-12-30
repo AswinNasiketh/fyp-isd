@@ -3,7 +3,8 @@
 fetch_latency = 1
 decode_issue_latency = 2
 
-#*mappings made using https://www.cl.cam.ac.uk/teaching/1617/ECAD+Arch/files/docs/RISCVGreenCardv8-20151013.pdf
+#*instruction list from https://www.cl.cam.ac.uk/teaching/1617/ECAD+Arch/files/docs/RISCVGreenCardv8-20151013.pdf
+#* mappings are guesses
 
 #*mapping from instruction to functional unit for accelerator
 ins2funcacc = {
@@ -20,6 +21,8 @@ ins2funcacc = {
     "sh": "ls",
     "sw": "ls",
     "sd": "ls",
+    "fld": "ls",
+    "fsd": "ls",
     "sll": "alu",
     "slli": "alu",
     "srli": "alu",
@@ -125,7 +128,11 @@ ins2funcacc = {
     "c.sw": "ls",
     "c.swsp": "ls",
     "c.sd": "ls",
+    "c.fld": "ls",
+    "c.fsd": "ls",
     "c.sdsp": "ls",
+    "c.fldsp": "ls",
+    "c.fsdsp": "ls",
     "c.add": "alu",
     "c.addw": "alu",
     "c.addi": "alu",
@@ -158,7 +165,9 @@ ins2funcacc = {
     "mrth": "csr",
     "hrts": "csr",
     "wfi": "csr",
-    "sfence.vm": "csr"
+    "sfence.vm": "csr",
+    #*MISC
+    "sc.w.aq": "ls"
 } 
 
 #*mapping from instruction to functional unit for cpu
@@ -183,6 +192,29 @@ func2latcpu = {
     "div":34 + fetch_latency + decode_issue_latency,
     "ls": 4 + fetch_latency + decode_issue_latency
 } 
+
+
+def get_ins_lat_acc(instr):
+    if "c." == instr[0:2]:
+        if not instr in ins2funcacc.keys():
+            instr = instr[2:] #strip compressed instruction prefix
+
+    instr_parts = instr.split(".")
+    if len(instr_parts) > 1:
+        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first instr
+    return func2latacc[ins2funcacc[instr]]
+
+
+def get_ins_lat_cpu(instr):
+    if "c." == instr[0:2]:
+        if not instr in ins2funccpu.keys():
+            instr = instr[2:] #strip compressed instruction prefix
+
+    instr_parts = instr.split(".")
+    if len(instr_parts) > 1:
+        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first instr
+
+    return func2latcpu[ins2funccpu[instr]]
 
 #todo:in future these dictionaries will be updated with different latencies for accelerator and CPU
 #todo:CPU will use full functional unit latencies
