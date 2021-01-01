@@ -2,9 +2,10 @@ from trace_analyser.df_graph import *
 from trace_analyser.latency_mappings import *
 
 class SequenceProfileEntry:
-    def __init__(self, cpu_time, acc_time):
+    def __init__(self, cpu_time, acc_time, area_cost):
         self.cpu_time = cpu_time
         self.acc_time = acc_time
+        self.area_cost = area_cost
 
 def find_node_depth(node, graph, cpu = False):
     if "inp" in graph.nodeLst[node]:
@@ -43,5 +44,6 @@ def profile_seq(inst_mem, start_addr, end_addr):
         if depth > maxDepthCpu:
             maxDepthCpu = depth
     #fetch and decode latencies already included in mappings for CPU
-    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc)
-    
+
+    area_cost = len(df_graph.nodeLst) #assume 1 unit area per FU required and 1 FU per instruction
+    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost)

@@ -7,13 +7,13 @@ from trace_analyser.sequence_profiler import *
 def main():
     branch_profile = BranchProfile()
     new_seq_addresses = None
-    sequence_selector = SequenceSelector(4, 8)
+    sequence_selector = SequenceSelector(32, 4, 8)
     cycle_counter = CycleCounter()
     inst_mem = {}
-    sequence_profiles = {}
+    sequence_profiles = {"0": SequenceProfileEntry(0, -1, 0)}
 
     instr_addr = ''
-    with open('trace_files/sim4.trace', 'r') as reader:
+    with open('trace_files/sim5.trace', 'r') as reader:
         for line in reader:
             if line[0:2] != "pc":
                 continue

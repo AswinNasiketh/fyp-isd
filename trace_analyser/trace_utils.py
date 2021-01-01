@@ -1,5 +1,5 @@
 def get_instr_addr(trace_line):
-    return str(int(trace_line.split()[0].split('=')[1], 16))
+    return str(int(trace_line.split()[0].split('=')[1], 16)) #*string of decimal integer representation of address
 
 
 #class to orgainise trace lines into assembly opcodes and operands

@@ -163,6 +163,7 @@ class BranchProfile:
                         self.process_on_next_line(instr_addr)
                 
         return new_seq_identified
+    
     def print_profile(self):
         for entry in self.branches:
             print("Branch Instr Addr:", entry.branch_instr_addr,
@@ -174,3 +175,10 @@ class BranchProfile:
             for entry in self.branches:
                 write_string = "Branch Instr Addr: " + entry.branch_instr_addr + ", Branch Target: " + entry.branch_target + ", Number of times taken: " + str(entry.num_branch_taken) + "\n"
                 writer.write(write_string)
+
+    def get_entry_for_addr(self, branch_instr_addr):
+        for entry in self.branches:
+            if entry.branch_instr_addr == branch_instr_addr:
+                return entry
+        
+        return None
