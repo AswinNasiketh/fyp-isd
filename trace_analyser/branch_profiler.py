@@ -24,7 +24,7 @@ class BranchProfileEntry:
         self.num_branch_taken = self.num_branch_taken >> 1
 
 class BranchProfile:
-    def __init__(self):
+    def __init__(self, hit_counter_max, max_branch_dist):
 
         
         self.branches = []
@@ -50,7 +50,9 @@ class BranchProfile:
         self.process_next_iter = False
         self.addr_next_iter = ""
 
-        self.branch_counter_limit = 16
+        self.branch_counter_limit = hit_counter_max
+        self.max_branch_dist = max_branch_dist
+
 
     def get_n_most_executed_branches(self, n):
         tmp_branches = self.branches.copy()
@@ -89,8 +91,9 @@ class BranchProfile:
         #processing for previous line if required
         if self.process_next_iter:
             self.process_next_iter = False
-            #only add backward branches
-            if hex2sint(instr_addr) < hex2sint(self.addr_next_iter):
+            #only add backward branches up to a maximum distance
+            branch_displacement = int(self.addr_next_iter, base=16) - int(instr_addr, base=16) 
+            if branch_displacement < 0 and branch_displacement >= -self.max_branch_dist:
                 self.add_new_branch_profile(self.addr_next_iter, instr_addr)  
                 new_seq_identified = self.addr_next_iter, instr_addr    
         

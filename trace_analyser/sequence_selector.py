@@ -14,11 +14,11 @@ class AccleratedSequence:
         self.hits += 1
 
 class SequenceSelector:
-    def __init__(self, max_area, max_accelerators, bprof_size):
+    def __init__(self, max_area, max_accelerators, bprof_size, max_hit_count):
         self.max_area = max_area
         self.max_accelerators = max_accelerators
         self.accelerating_sequences = [AccleratedSequence("0", "0") for i in range(self.max_accelerators)]
-        self.hit_saturate_limit = 16
+        self.hit_saturate_limit = max_hit_count
         self.bprof_size = bprof_size
     
     def shift_hits_right(self):

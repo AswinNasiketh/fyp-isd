@@ -4,11 +4,16 @@ from trace_analyser.cycle_counter import *
 from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
 
+max_hit_count = 16
+max_area = 32
+max_num_accelerators = 4
+num_bprof_entries = 8
+
 def main():
-    branch_profile = BranchProfile()
+    branch_profile = BranchProfile(max_hit_count, max_area)
     new_seq_addresses = None
     counters_shifted = False
-    sequence_selector = SequenceSelector(32, 4, 8)
+    sequence_selector = SequenceSelector(max_area, max_num_accelerators, num_bprof_entries, max_hit_count)
     cycle_counter = CycleCounter()
     inst_mem = {}
     sequence_profiles = {"0": SequenceProfileEntry(0, -1, 0)}
