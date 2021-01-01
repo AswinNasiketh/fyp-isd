@@ -171,7 +171,7 @@ ins2funcacc = {
 } 
 
 #*mapping from instruction to functional unit for cpu
-ins2funccpu = ins2funcacc.copy()
+ins2funccpu = ins2funcacc
 
 #*mapping of functional units to latency for accelerator
 func2latacc = {
@@ -201,7 +201,7 @@ def get_ins_lat_acc(instr):
 
     instr_parts = instr.split(".")
     if len(instr_parts) > 1:
-        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first instr
+        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first .
     return func2latacc[ins2funcacc[instr]]
 
 
@@ -212,7 +212,7 @@ def get_ins_lat_cpu(instr):
 
     instr_parts = instr.split(".")
     if len(instr_parts) > 1:
-        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first instr
+        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first .
 
     return func2latcpu[ins2funccpu[instr]]
 

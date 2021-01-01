@@ -92,7 +92,7 @@ class BranchProfile:
         if self.process_next_iter:
             self.process_next_iter = False
             #only add backward branches up to a maximum distance
-            branch_displacement = int(self.addr_next_iter, base=16) - int(instr_addr, base=16) 
+            branch_displacement = int(instr_addr, base=16) - int(self.addr_next_iter, base=16)
             if branch_displacement < 0 and branch_displacement >= -self.max_branch_dist:
                 self.add_new_branch_profile(self.addr_next_iter, instr_addr)  
                 new_seq_identified = self.addr_next_iter, instr_addr    

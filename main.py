@@ -10,13 +10,13 @@ max_num_accelerators = 4
 num_bprof_entries = 8
 
 def main():
-    branch_profile = BranchProfile(max_hit_count, max_area)
+    branch_profile = BranchProfile(max_hit_count, max_area * 2)
     new_seq_addresses = None
     counters_shifted = False
     sequence_selector = SequenceSelector(max_area, max_num_accelerators, num_bprof_entries, max_hit_count)
     cycle_counter = CycleCounter()
     inst_mem = {}
-    sequence_profiles = {"0": SequenceProfileEntry(0, -1, 0)}
+    sequence_profiles = {"0": SequenceProfileEntry(0, 1, 0)}
 
     instr_addr = ''
     with open('trace_files/sim5.trace', 'r') as reader:
