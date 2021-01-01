@@ -7,6 +7,7 @@ from trace_analyser.sequence_profiler import *
 def main():
     branch_profile = BranchProfile()
     new_seq_addresses = None
+    counters_shifted = False
     sequence_selector = SequenceSelector(32, 4, 8)
     cycle_counter = CycleCounter()
     inst_mem = {}
@@ -21,13 +22,16 @@ def main():
             inst_mem[instr_addr] = TraceLine(line)
             # print(inst_mem)
             cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles)
-            new_seq_addresses = branch_profile.process_trace_line(line)
+            new_seq_addresses, counters_shifted = branch_profile.process_trace_line(line)
 
             if new_seq_addresses != None:
                 branch_inst_addr, branch_target_addr = new_seq_addresses
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
 
             sequence_selector.update_accelerated_sequences(line, branch_profile, sequence_profiles)
+
+            if counters_shifted:
+                sequence_selector.shift_hits_right()
 
             
     print("Profiling done")

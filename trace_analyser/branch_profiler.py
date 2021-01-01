@@ -93,12 +93,14 @@ class BranchProfile:
             if hex2sint(instr_addr) < hex2sint(self.addr_next_iter):
                 self.add_new_branch_profile(self.addr_next_iter, instr_addr)  
                 new_seq_identified = self.addr_next_iter, instr_addr    
-            
+        
+        counters_shifted = False
         branch_entry = self.is_branch_cached(instr_addr)
         if branch_entry != False:
             branch_entry.increment_taken_count()
             if branch_entry.num_branch_taken > self.branch_counter_limit:
                 self.shift_all_counters()
+                counters_shifted = True
         else:
             #check if backward branch and add to list
             opcode = fields[1]
@@ -162,7 +164,7 @@ class BranchProfile:
                     if rs1_val >= rs2_val:
                         self.process_on_next_line(instr_addr)
                 
-        return new_seq_identified
+        return new_seq_identified, counters_shifted
     
     def print_profile(self):
         for entry in self.branches:
