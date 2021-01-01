@@ -37,3 +37,8 @@ class CycleCounter:
         print("Accelerated cycles", self.accelerated_cycles)
 
         percentage_improvement = (1.0 - (float(self.non_accelerated_cycles)/float(self.accelerated_cycles))) * 100
+
+        print("Percentage Improvement:", percentage_improvement)
+
+    def add_reconf_penalty(self, reconf_penalty):
+        self.accelerated_cycles += reconf_penalty

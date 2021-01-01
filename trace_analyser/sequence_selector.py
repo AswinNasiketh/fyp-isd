@@ -1,5 +1,8 @@
 from trace_analyser.trace_utils import get_instr_addr
+from trace_analyser.latency_mappings import *
 import functools
+
+RECONF_START_PENALTY_MODIFIER = 0.5 #dictates how early the model chooses to go for a reconfiguration. Lower numbers mean more risky/more early. Must be greater than 0.
 
 class AccleratedSequence:
     def __init__(self, branch_address, branch_target_addr):
@@ -89,7 +92,7 @@ class SequenceSelector:
         imp_diffs = []
         for addr in rep_seqs:
             num_accs_to_replace, imp_diff = self.calculate_improvement_diff(addr, seq_profiles, branch_profile, current_acc_improvements)
-            if imp_diff > 0:
+            if imp_diff > RECONF_START_PENALTY * CPU_CLK_FREQ * RECONF_START_PENALTY_MODIFIER: # only consider accelerators which provide more improvement than the reconfiguration starting penalty
                 imp_diffs.append((addr, num_accs_to_replace, imp_diff))
 
         return imp_diffs
@@ -103,9 +106,9 @@ class SequenceSelector:
 
 
     def add_accelerator(self, best_seq_to_acc, num_accs_to_replace, branch_profile, seq_profiles):
-        # print("Adding accelerator for seq at:", best_seq_to_acc, "Replacing", num_accs_to_replace, "accelerators")
+        print("Adding accelerator for seq at:", best_seq_to_acc, "Replacing", num_accs_to_replace, "accelerators")
         current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
-        # print(current_acc_improvements)
+        print(current_acc_improvements)
 
         dummy_accelerator = AccleratedSequence("0", "0")
 
@@ -120,16 +123,24 @@ class SequenceSelector:
 
 
     def update_accelerated_sequences(self, trace_line, branch_profile, seq_profiles):
-        # print("New line")
+        print("New line")
+        current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
+        print(current_acc_improvements)
         self.update_hits(trace_line)
 
         rep_seqs = self.get_replacement_seqs(branch_profile, seq_profiles)
         improvement_diffs = self.calculate_improvement_diffs(rep_seqs, branch_profile, seq_profiles)
-        # print(len(improvement_diffs))
+        reconf_penalty = 0
+        if len(improvement_diffs) > 0:
+            reconf_penalty += RECONF_START_PENALTY
         #iterates until no further improvements can be made
         while len(improvement_diffs) > 0:
             best_seq_to_acc, num_accs_to_replace, _ = max(improvement_diffs, key= lambda x: x[2])
             self.add_accelerator(best_seq_to_acc, num_accs_to_replace, branch_profile, seq_profiles)
 
+            reconf_penalty += seq_profiles[best_seq_to_acc].reconf_time
+
             rep_seqs = self.get_replacement_seqs(branch_profile, seq_profiles)
             improvement_diffs = self.calculate_improvement_diffs(rep_seqs, branch_profile, seq_profiles)
+
+        return reconf_penalty

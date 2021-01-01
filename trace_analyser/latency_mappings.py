@@ -3,6 +3,11 @@
 fetch_latency = 1
 decode_issue_latency = 2
 
+CPU_CLK_FREQ = 1000000 #1MHz
+RECONF_TIME_PER_FRAME = 0.000010
+FRAMES_PER_FU = 5 #todo: replace with a dictionary with actual frames per FU
+RECONF_START_PENALTY = 0.000100
+
 #*instruction list from https://www.cl.cam.ac.uk/teaching/1617/ECAD+Arch/files/docs/RISCVGreenCardv8-20151013.pdf
 #* mappings are guesses
 
