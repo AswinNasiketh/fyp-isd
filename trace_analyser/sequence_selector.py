@@ -125,7 +125,7 @@ class SequenceSelector:
 
         rep_seqs = self.get_replacement_seqs(branch_profile, seq_profiles)
         improvement_diffs = self.calculate_improvement_diffs(rep_seqs, branch_profile, seq_profiles)
-        print(len(improvement_diffs))
+        # print(len(improvement_diffs))
         #iterates until no further improvements can be made
         while len(improvement_diffs) > 0:
             best_seq_to_acc, num_accs_to_replace, _ = max(improvement_diffs, key= lambda x: x[2])
