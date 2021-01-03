@@ -1,6 +1,7 @@
 from trace_analyser.trace_utils import get_instr_addr
 from trace_analyser.latency_mappings import *
 import functools
+from trace_analyser.logger import *
 
 RECONF_START_PENALTY_MODIFIER = 0.5 #dictates how early the model chooses to go for a reconfiguration. Lower numbers mean more risky/more early. Must be greater than 0.
 
@@ -75,7 +76,7 @@ class SequenceSelector:
         
         if extra_area_required > 0:
             return num_accs_to_replace, -1 #negative result will be disregarded in next step 
-            #todo:in reality, careful tuning of max backward branch displacement is required
+            #todo:in reality, careful tuning of max backward branch displacement is required to ensure area isn't exceeded by single seq
         else:
             return num_accs_to_replace, improvement_gain - improvement_loss
 
@@ -98,7 +99,7 @@ class SequenceSelector:
         return imp_diffs
 
     def replace_accelerator(self, current_acc_branch_address, new_acc):
-        # print("replacing:", current_acc_branch_address, "with:", new_acc.branch_address)
+        print_line("replacing:", current_acc_branch_address, "with:", new_acc.branch_address)
         for i, acc in enumerate(self.accelerating_sequences):
             if acc.branch_address == current_acc_branch_address:
                 self.accelerating_sequences[i] = new_acc
@@ -106,9 +107,9 @@ class SequenceSelector:
 
 
     def add_accelerator(self, best_seq_to_acc, num_accs_to_replace, branch_profile, seq_profiles):
-        print("Adding accelerator for seq at:", best_seq_to_acc, "Replacing", num_accs_to_replace, "accelerators")
+        print_line("Adding accelerator for seq at:", best_seq_to_acc, "Replacing", num_accs_to_replace, "accelerators")
         current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
-        print(current_acc_improvements)
+        print_line(current_acc_improvements)
 
         dummy_accelerator = AccleratedSequence("0", "0")
 
@@ -123,9 +124,9 @@ class SequenceSelector:
 
 
     def update_accelerated_sequences(self, trace_line, branch_profile, seq_profiles):
-        print("New line")
-        current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
-        print(current_acc_improvements)
+        # print_line("New line")
+        # current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
+        # print_line(current_acc_improvements)
         self.update_hits(trace_line)
 
         rep_seqs = self.get_replacement_seqs(branch_profile, seq_profiles)

@@ -1,5 +1,6 @@
 from trace_analyser.latency_mappings import *
 from trace_analyser.trace_utils import get_instr_addr
+from trace_analyser.logger import *
 
 #This class will measure the improvement in cycle count
 class CycleCounter:
@@ -33,12 +34,12 @@ class CycleCounter:
             self.accelerated_cycles += in_order_instr_lat
 
     def print_cycles(self):
-        print("Non accelerated cycles", self.non_accelerated_cycles)
-        print("Accelerated cycles", self.accelerated_cycles)
+        print_line("Non accelerated cycles", self.non_accelerated_cycles)
+        print_line("Accelerated cycles", self.accelerated_cycles)
 
         percentage_improvement = (1.0 - (float(self.non_accelerated_cycles)/float(self.accelerated_cycles))) * 100
 
-        print("Percentage Improvement:", percentage_improvement)
+        print_line("Percentage Improvement:", percentage_improvement)
 
     def add_reconf_penalty(self, reconf_penalty):
         self.accelerated_cycles += reconf_penalty

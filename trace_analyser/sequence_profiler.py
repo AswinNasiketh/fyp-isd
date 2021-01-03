@@ -1,6 +1,6 @@
 from trace_analyser.df_graph import *
 from trace_analyser.latency_mappings import *
-
+from trace_analyser.logger import *
 
 
 class SequenceProfileEntry:
@@ -19,7 +19,7 @@ def find_node_depth(node, graph, cpu = False):
     for inpNode in inputNodes:
         inputNodeDepths.append(find_node_depth(inpNode, graph, cpu))
     
-    # print(inputNodeDepths)
+    # print_line(inputNodeDepths)
 
     if cpu:
         return get_ins_lat_cpu(graph.nodeLst[node]) + max(inputNodeDepths)

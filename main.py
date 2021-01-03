@@ -3,6 +3,7 @@ from trace_analyser.sequence_selector import *
 from trace_analyser.cycle_counter import *
 from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
+from trace_analyser.logger import *
 
 max_hit_count = 64
 max_area = 64
@@ -20,13 +21,17 @@ def main():
     sequence_profiles = {"0": SequenceProfileEntry(0, 1, 0, 0)} #initial entry for dummy accelerator
 
     instr_addr = ''
+    line_num = 0
     with open('trace_files/sim5.trace', 'r') as reader:
         for line in reader:
+            print_line("Line number:", line_num)
+            line_num += 1
+
             if line[0:2] != "pc":
                 continue
             instr_addr = get_instr_addr(line)
             inst_mem[instr_addr] = TraceLine(line)
-            # print(inst_mem)
+            # print_line(inst_mem)
             cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles)
             new_seq_addresses, counters_shifted = branch_profile.process_trace_line(line)
 
@@ -42,7 +47,7 @@ def main():
                 sequence_selector.shift_hits_right()
 
             
-    print("Profiling done")
+    print_line("Profiling done")
     cycle_counter.print_cycles()
     branch_profile.dump_profile()
 

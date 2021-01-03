@@ -1,3 +1,4 @@
+from trace_analyser.logger import *
 #Backward Branch Sequence Identifier
 
 #64 bit hexadecimal string to 64 bit signed integer
@@ -85,7 +86,7 @@ class BranchProfile:
         fields = line.split() #splits line into list, delimiter is spaces by default
 
         instr_addr = fields[0].split('=')[1] 
-        # print(instr_addr)
+        # print_line(instr_addr)
 
         new_seq_identified = None
         #processing for previous line if required
@@ -109,7 +110,7 @@ class BranchProfile:
             opcode = fields[1]
             
             if opcode in self.branch_opcodes:
-                # print("new instr found opcode:", instr_addr )
+                # print_line("new instr found opcode:", instr_addr )
                 if opcode == "c.j" or opcode == "c.jal" or opcode == "c.jr" or opcode == "c.jalr" or opcode == "jalr" or opcode == "jal" or "j": #unconditional branches
                     self.process_on_next_line(instr_addr)
                 elif opcode == "c.beqz":
@@ -171,7 +172,7 @@ class BranchProfile:
     
     def print_profile(self):
         for entry in self.branches:
-            print("Branch Instr Addr:", entry.branch_instr_addr,
+            print_line("Branch Instr Addr:", entry.branch_instr_addr,
             "Branch Target:", entry.branch_target,
             "Number of times taken:", entry.num_branch_taken)
 

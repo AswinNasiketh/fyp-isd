@@ -1,4 +1,5 @@
 from trace_analyser.trace_utils import TraceLine
+from trace_analyser.logger import *
 #data container class
 class DFGraphEdge:
     
@@ -21,11 +22,11 @@ class DFGraph:
     
     def print_nodes(self):
         for i, op in enumerate(self.nodeLst):
-            print("nodeID:", i, ", op:", op)
+            print_line("nodeID:", i, ", op:", op)
 
     def print_edges(self):
         for edge in self.adjLst:
-            print("Edge from:", edge.fromNode, "Edge To:", edge.toNode)
+            print_line("Edge from:", edge.fromNode, "Edge To:", edge.toNode)
     
     def get_output_nodes(self):
         intermediate_nodes = []
@@ -50,7 +51,7 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
     for addr in inst_mem.keys():
         if int(addr) < seq_start_addr or int(addr) >= seq_stop_addr:
             continue
-        # print(hex(addr)[2:])
+        # print_line(hex(addr)[2:])
         instr = inst_mem[addr]
         
         nodeID = df_graph.addNode(instr.opcode)
