@@ -3,7 +3,7 @@ from trace_analyser.latency_mappings import *
 import functools
 from trace_analyser.logger import *
 
-RECONF_START_PENALTY_MODIFIER = 0.5 #dictates how early the model chooses to go for a reconfiguration. Lower numbers mean more risky/more early. Must be greater than 0.
+RECONF_START_PENALTY_MODIFIER = 0.0 #dictates how early the model chooses to go for a reconfiguration. Lower numbers mean more risky/more early. Must be greater than 0.
 
 class AccleratedSequence:
     def __init__(self, branch_address, branch_target_addr):
@@ -45,7 +45,7 @@ class SequenceSelector:
         return seq_profile.cpu_time - seq_profile.acc_time
 
     def calculate_improvement(self, seq_profile, hits):
-        return self.caclulate_advantage(seq_profile) * hits
+        return (self.caclulate_advantage(seq_profile) * hits) - seq_profile.reconf_time
 
     def get_replacement_seqs(self, branch_profile, seq_profiles):
         top_branches = branch_profile.get_n_most_executed_branches(self.bprof_size)
