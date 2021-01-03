@@ -37,7 +37,7 @@ class CycleCounter:
         print_line("Non accelerated cycles", self.non_accelerated_cycles)
         print_line("Accelerated cycles", self.accelerated_cycles)
 
-        percentage_improvement = (1.0 - (float(self.non_accelerated_cycles)/float(self.accelerated_cycles))) * 100
+        percentage_improvement = (1.0 - (float(self.accelerated_cycles)/float(self.non_accelerated_cycles))) * 100
 
         print_line("Percentage Improvement:", percentage_improvement)
 
