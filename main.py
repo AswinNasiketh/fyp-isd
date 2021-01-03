@@ -5,10 +5,22 @@ from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
 from trace_analyser.logger import *
 
+trace_file = 'trace_files/sim_cm20.trace'
+
 max_hit_count = 64
 max_area = 64
 max_num_accelerators = 4
 num_bprof_entries = 8
+
+print_line("Simulation Params")
+print_line("Max Hit Count", max_hit_count)
+print_line("Max Area", max_area)
+print_line("Max Num Acclerators", max_num_accelerators)
+print_line("Num BProf Entries", num_bprof_entries)
+print_line("Reconf start penalty modifier" , RECONF_START_PENALTY_MODIFIER)
+
+print_line("Using trace", trace_file)
+
 
 def main():
     branch_profile = BranchProfile(max_hit_count, max_area * 2)
@@ -22,7 +34,7 @@ def main():
 
     instr_addr = ''
     line_num = 0
-    with open('trace_files/sim5.trace', 'r') as reader:
+    with open(trace_file, 'r') as reader:
         for line in reader:
             print_line("Line number:", line_num)
             line_num += 1
