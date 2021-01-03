@@ -2,3 +2,4 @@ trace_files
 .vscode
 __pycache__
 *.profile
+logs
