@@ -3,7 +3,9 @@ from trace_analyser.latency_mappings import *
 import functools
 from trace_analyser.logger import *
 
-RECONF_START_PENALTY_MODIFIER = 0.0 #dictates how early the model chooses to go for a reconfiguration. Lower numbers mean more risky/more early. Must be greater than 0.
+#dictate how aggressive the model is in going for reconfigurations. Lower numbers mean more risky. Realistically must be greater than 0.
+RECONF_START_PENALTY_MODIFIER = 0.0 
+RECONF_PENALTY_MODIFIER = 0.5
 
 class AccleratedSequence:
     def __init__(self, branch_address, branch_target_addr):
@@ -45,7 +47,7 @@ class SequenceSelector:
         return seq_profile.cpu_time - seq_profile.acc_time
 
     def calculate_improvement(self, seq_profile, hits):
-        return (self.caclulate_advantage(seq_profile) * hits) - seq_profile.reconf_time
+        return (self.caclulate_advantage(seq_profile) * hits) - (seq_profile.reconf_time * RECONF_PENALTY_MODIFIER)
 
     def get_replacement_seqs(self, branch_profile, seq_profiles):
         top_branches = branch_profile.get_n_most_executed_branches(self.bprof_size)
@@ -91,12 +93,17 @@ class SequenceSelector:
         current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
 
         imp_diffs = []
+        pos_diffs_sum = 0
         for addr in rep_seqs:
             num_accs_to_replace, imp_diff = self.calculate_improvement_diff(addr, seq_profiles, branch_profile, current_acc_improvements)
-            if imp_diff > RECONF_START_PENALTY * CPU_CLK_FREQ * RECONF_START_PENALTY_MODIFIER: # only consider accelerators which provide more improvement than the reconfiguration starting penalty
+            if imp_diff > 0: # only consider accelerators which provide more improvement than 0
                 imp_diffs.append((addr, num_accs_to_replace, imp_diff))
+                pos_diffs_sum += imp_diff
 
-        return imp_diffs
+        if pos_diffs_sum > RECONF_START_PENALTY * CPU_CLK_FREQ * RECONF_START_PENALTY_MODIFIER:
+            return imp_diffs
+        else:
+            return []
 
     def replace_accelerator(self, current_acc_branch_address, new_acc):
         print_line("replacing:", current_acc_branch_address, "with:", new_acc.branch_address)

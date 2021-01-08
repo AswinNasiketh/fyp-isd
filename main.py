@@ -18,6 +18,7 @@ print_line("Max Area", max_area)
 print_line("Max Num Acclerators", max_num_accelerators)
 print_line("Num BProf Entries", num_bprof_entries)
 print_line("Reconf start penalty modifier" , RECONF_START_PENALTY_MODIFIER)
+print_line("Reconf penalty modifier", RECONF_PENALTY_MODIFIER)
 
 print_line("Using trace", trace_file)
 
