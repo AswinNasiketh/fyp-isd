@@ -8,10 +8,11 @@ RECONF_START_PENALTY_MODIFIER = 0.0
 RECONF_PENALTY_MODIFIER = 0.5
 
 class AccleratedSequence:
-    def __init__(self, branch_address, branch_target_addr):
+    def __init__(self, branch_address, branch_target_addr, reconfiguring = True):
         self.branch_address = branch_address
         self.branch_target_addr = branch_target_addr
         self.hits = 0
+        self.reconfiguring = reconfiguring
         
     def shift_num_hits_right(self):
         self.hits = self.hits >> 1

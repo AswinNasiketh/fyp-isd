@@ -45,7 +45,7 @@ def main():
             instr_addr = get_instr_addr(line)
             inst_mem[instr_addr] = TraceLine(line)
             # print_line(inst_mem)
-            cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles)
+            
             new_seq_addresses, counters_shifted = branch_profile.process_trace_line(line)
 
             if new_seq_addresses != None:
@@ -54,7 +54,9 @@ def main():
 
             reconf_penalty = sequence_selector.update_accelerated_sequences(line, branch_profile, sequence_profiles)
 
-            cycle_counter.add_reconf_penalty(reconf_penalty)
+            cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles, reconf_penalty)
+
+            # cycle_counter.add_reconf_penalty(reconf_penalty)
 
             if counters_shifted:
                 sequence_selector.shift_hits_right()

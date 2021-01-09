@@ -8,18 +8,29 @@ class CycleCounter:
     def __init__(self):
         self.non_accelerated_cycles = 0
         self.accelerated_cycles = 0
+        self.reconfiguring_acc_finish_times = {}
 
 
         # self.accelerator_used = [False for i in range(num_accelerators)]
 
 #assumes in order operation for non accelerated sections
-    def count_line(self, trace_line, accelerated_seqs, inst_mem, seq_profiles):
+    def count_line(self, trace_line, accelerated_seqs, inst_mem, seq_profiles, reconf_penalty):
         count_in_accelerated = True
         pc_addr = int(trace_line.split()[0].split("=")[-1] , base=16)
         instr = inst_mem[get_instr_addr(trace_line)].opcode
 
-        
-        for seq in accelerated_seqs:            
+        # self.accelerated_cycles += reconf_penalty
+        for seq in accelerated_seqs:
+            #handle currently reconfiguring sequences
+            # if seq.reconfiguring:
+            #     if seq.branch_address in self.reconfiguring_acc_finish_times.keys():
+            #         if self.non_accelerated_cycles >= self.reconfiguring_acc_finish_times[seq.branch_address]:
+            #             seq.reconfiguring = False #if reconfiguration time is done, then enable the accelerator for the next line
+            #     else:
+            #         reconf_finish_time = self.non_accelerated_cycles + reconf_penalty
+            #         self.reconfiguring_acc_finish_times[seq.branch_address] = reconf_finish_time #if new accelerator not previously seen then calculate and store when it can be enabled
+            #     continue #do not include any currently reconfiguring accelerators in cycle calculations
+            
             range_start = int(seq.branch_target_addr, base=16)
             range_stop = int(seq.branch_address, base=16)
             if pc_addr >= range_start and pc_addr < range_stop:
