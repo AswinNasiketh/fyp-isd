@@ -4,8 +4,9 @@ from trace_analyser.cycle_counter import *
 from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
 from trace_analyser.logger import *
+from trace_analyser.graph_visualiser import *
 
-trace_file = 'trace_files/sim_cm20.trace'
+trace_file = 'trace_files/sim_ds_mod.trace'
 
 max_hit_count = 64
 max_area = 64
@@ -31,13 +32,13 @@ def main():
     reconf_penalty = 0
     cycle_counter = CycleCounter()
     inst_mem = {}
-    sequence_profiles = {"0": SequenceProfileEntry(0, 1, 0, 0)} #initial entry for dummy accelerator
+    sequence_profiles = {"0": SequenceProfileEntry(0, 1, 0, 0, DFGraph())} #initial entry for dummy accelerator
 
     instr_addr = ''
     line_num = 0
     with open(trace_file, 'r') as reader:
         for line in reader:
-            print_line("Line number:", line_num)
+            # print_line("Line number:", line_num)
             line_num += 1
 
             if line[0:2] != "pc":
@@ -55,6 +56,14 @@ def main():
             reconf_penalty = sequence_selector.update_accelerated_sequences(line, branch_profile, sequence_profiles)
 
             cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles, reconf_penalty)
+
+            if reconf_penalty > 0:
+                print_line("Accelerators changing, showing dataflow graphs")
+                
+                acc_start_addrs = [seq.branch_address for seq in sequence_selector.accelerating_sequences]
+
+                plot_accs(acc_start_addrs, sequence_profiles)
+
 
             # cycle_counter.add_reconf_penalty(reconf_penalty)
 

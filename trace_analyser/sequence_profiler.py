@@ -4,11 +4,12 @@ from trace_analyser.logger import *
 
 
 class SequenceProfileEntry:
-    def __init__(self, cpu_time, acc_time, area_cost, reconf_time):
+    def __init__(self, cpu_time, acc_time, area_cost, reconf_time, df_graph):
         self.cpu_time = cpu_time
         self.acc_time = acc_time
         self.area_cost = area_cost
         self.reconf_time = reconf_time
+        self.df_graph = df_graph
 
 def find_node_depth(node, graph, cpu = False):
     if "inp" in graph.nodeLst[node]:
@@ -52,4 +53,4 @@ def profile_seq(inst_mem, start_addr, end_addr):
 
     reconf_time = len(df_graph.nodeLst) * FRAMES_PER_FU * RECONF_TIME_PER_FRAME * CPU_CLK_FREQ #in cycles
 
-    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time)
+    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph)
