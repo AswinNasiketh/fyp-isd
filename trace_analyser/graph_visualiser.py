@@ -25,15 +25,24 @@ def draw_nxg(nx_graph, ax):
     nx.draw_networkx_labels(nx_graph, pos, labels = node_labels, ax=ax)
 
 def plot_accs(acc_start_addrs, seq_profiles):
-    fig, axs = plt.subplots(len(acc_start_addrs))
+    # print(acc_start_addrs)
+    used_accs = [start_addr for start_addr in acc_start_addrs if start_addr != '0']
+    fig, axs = plt.subplots(1 ,len(used_accs))
 
     # fig.suptitle("Accelerator data flow graphs")
 
-    for i, start_addr in enumerate(acc_start_addrs):
-        df_graph = seq_profiles[start_addr].df_graph
+    if len(used_accs) > 1:
+        for i, start_addr in enumerate(used_accs):
+            df_graph = seq_profiles[start_addr].df_graph
+            nx_graph = convert_dfg_nxg(df_graph)
+            
+            draw_nxg(nx_graph, axs[i])
+            axs[i].set_title("Accelerator starting address = " + start_addr)
+    else:
+        df_graph = seq_profiles[used_accs[0]].df_graph
         nx_graph = convert_dfg_nxg(df_graph)
-
-        draw_nxg(nx_graph, axs[i])
-        axs[i].set_title("Accelerator starting address = " + start_addr)
+            
+        draw_nxg(nx_graph, axs)
+        axs.set_title("Accelerator starting address = " + used_accs[0])
 
     plt.show()

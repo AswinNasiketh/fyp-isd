@@ -12,7 +12,7 @@ class SequenceProfileEntry:
         self.df_graph = df_graph
 
 def find_node_depth(node, graph, cpu = False):
-    if "inp" in graph.nodeLst[node]:
+    if "lit" in graph.nodeLst[node] or "reg" in graph.nodeLst[node]:
         return 0
     
     inputNodes = [edge.fromNode for edge in graph.adjLst if edge.toNode == node]

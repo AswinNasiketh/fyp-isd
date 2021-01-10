@@ -38,7 +38,7 @@ class DFGraph:
         outputNodes = [i for i in allNodes if not i in intermediate_nodes]
         return outputNodes
 
-fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr"] #first argument as input instructions
+fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
 
 def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
     seq_start_addr = int(seq_start_addr, base=16)
@@ -73,7 +73,10 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
                     break
 
             if fromNodeID == -1:
-                inpNode = df_graph.addNode("inp(" + instr.operands[i] + ")")
+                if instr.operands[i].isdecimal() or "0x" in instr.operands[i] or "-" in instr.operands[i]:
+                    inpNode = df_graph.addNode("lit(" + instr.operands[i] + ")")
+                else:
+                    inpNode = df_graph.addNode("reg(" + instr.operands[i] + ")")
                 df_graph.addEgde(DFGraphEdge(inpNode, nodeID))
 
 
