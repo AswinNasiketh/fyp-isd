@@ -117,7 +117,7 @@ class SequenceSelector:
     def add_accelerator(self, best_seq_to_acc, num_accs_to_replace, branch_profile, seq_profiles):
         print_line("Adding accelerator for seq at:", best_seq_to_acc, "Replacing", num_accs_to_replace, "accelerators")
         current_acc_improvements = self.get_sorted_current_improvements(seq_profiles)
-        print_line(current_acc_improvements)
+        # print_line(current_acc_improvements)
 
         dummy_accelerator = AccleratedSequence("0", "0")
 

@@ -53,4 +53,7 @@ def profile_seq(inst_mem, start_addr, end_addr):
 
     reconf_time = len(df_graph.nodeLst) * FRAMES_PER_FU * RECONF_TIME_PER_FRAME * CPU_CLK_FREQ #in cycles
 
+    print("Acc Depth", maxDepthAcc)
+    print("CPU Depth", maxDepthCpu)
+
     return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph)

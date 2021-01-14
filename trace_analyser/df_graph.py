@@ -31,7 +31,7 @@ class DFGraph:
     def get_output_nodes(self):
         intermediate_nodes = []
         for edge in self.adjLst:
-            if not edge.fromNode in intermediate_nodes:
+            if (not (edge.fromNode in intermediate_nodes)) and (not ("reg" in self.nodeLst[edge.toNode])): #if the nodes output is not a register, and its an intermediate node
                 intermediate_nodes.append(edge.fromNode)
 
         allNodes = [i for i in range(len(self.nodeLst))]
@@ -82,6 +82,21 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
 
         if start_index == 1:
             reg_file[instr.operands[0]] = nodeID
+
+    #find feedback paths
+    for nodeID, node in enumerate(df_graph.nodeLst):
+        if not "reg" in node:
+            continue
+
+        op_exprs = node.replace("(", " ").replace(")", " ").split(" ") #replace all brackets with spaces, then split by spaces
+
+        while op_exprs[-1] == '':
+            op_exprs.pop()
+
+        reg = op_exprs[-1]
+        # print("Inp reg", reg)
+        if reg in reg_file.keys():
+            df_graph.addEgde(DFGraphEdge(reg_file[reg], nodeID))
 
     return df_graph
 
