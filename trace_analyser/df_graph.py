@@ -40,6 +40,14 @@ class DFGraph:
 
 fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
 
+def get_reg_name(reg_expr):
+    op_exprs = reg_expr.replace("(", " ").replace(")", " ").split(" ") #replace all brackets with spaces, then split by spaces
+
+    while op_exprs[-1] == '':
+        op_exprs.pop()
+
+    return op_exprs[-1]
+
 def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
     seq_start_addr = int(seq_start_addr, base=16)
     seq_stop_addr = int(seq_stop_addr, base=16)
@@ -48,11 +56,12 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
 
     df_graph = DFGraph()
 
-    for addr in inst_mem.keys():
-        if int(addr) < seq_start_addr or int(addr) >= seq_stop_addr:
-            continue
-        # print_line(hex(addr)[2:])
-        instr = inst_mem[addr]
+    inst_mem_sorted = list(inst_mem.items())
+    inst_mem_sorted.sort(key = lambda x: int(x[0]))
+    # print(inst_mem_sorted)
+    inst_mem_sorted = [instr[1] for instr in inst_mem_sorted if int(instr[0]) >= seq_start_addr and int(instr[0]) < seq_stop_addr]
+
+    for instr in inst_mem_sorted:
         
         nodeID = df_graph.addNode(instr.opcode)
         
@@ -77,6 +86,8 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
                     inpNode = df_graph.addNode("lit(" + instr.operands[i] + ")")
                 else:
                     inpNode = df_graph.addNode("reg(" + instr.operands[i] + ")")
+                    reg = get_reg_name(df_graph.nodeLst[inpNode])
+                    reg_file[reg] = inpNode
                 df_graph.addEgde(DFGraphEdge(inpNode, nodeID))
 
 
@@ -88,12 +99,7 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
         if not "reg" in node:
             continue
 
-        op_exprs = node.replace("(", " ").replace(")", " ").split(" ") #replace all brackets with spaces, then split by spaces
-
-        while op_exprs[-1] == '':
-            op_exprs.pop()
-
-        reg = op_exprs[-1]
+        reg = get_reg_name(node)
         # print("Inp reg", reg)
         if reg in reg_file.keys():
             df_graph.addEgde(DFGraphEdge(reg_file[reg], nodeID))
