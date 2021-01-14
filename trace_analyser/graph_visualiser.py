@@ -24,25 +24,25 @@ def draw_nxg(nx_graph, ax):
     nx.draw(nx_graph, pos = pos, ax = ax, node_color="#32CD32")
     nx.draw_networkx_labels(nx_graph, pos, labels = node_labels, ax=ax)
 
-def plot_accs(acc_start_addrs, seq_profiles):
-    # print(acc_start_addrs)
-    used_accs = [start_addr for start_addr in acc_start_addrs if start_addr != '0']
+def plot_accs(acc_branch_addrs, seq_profiles):
+    # print(acc_branch_addrs)
+    used_accs = [branch_addr for branch_addr in acc_branch_addrs if branch_addr != '0']
     fig, axs = plt.subplots(1 ,len(used_accs))
 
     # fig.suptitle("Accelerator data flow graphs")
 
     if len(used_accs) > 1:
-        for i, start_addr in enumerate(used_accs):
-            df_graph = seq_profiles[start_addr].df_graph
+        for i, branch_addr in enumerate(used_accs):
+            df_graph = seq_profiles[branch_addr].df_graph
             nx_graph = convert_dfg_nxg(df_graph)
             
             draw_nxg(nx_graph, axs[i])
-            axs[i].set_title("Accelerator starting address = " + start_addr)
+            axs[i].set_title("Accelerator branch address = " + branch_addr)
     else:
         df_graph = seq_profiles[used_accs[0]].df_graph
         nx_graph = convert_dfg_nxg(df_graph)
             
         draw_nxg(nx_graph, axs)
-        axs.set_title("Accelerator starting address = " + used_accs[0])
+        axs.set_title("Accelerator braanch address = " + used_accs[0])
 
     plt.show()
