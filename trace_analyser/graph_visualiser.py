@@ -24,6 +24,12 @@ def draw_nxg(nx_graph, ax):
     nx.draw(nx_graph, pos = pos, ax = ax, node_color="#32CD32")
     nx.draw_networkx_labels(nx_graph, pos, labels = node_labels, ax=ax)
 
+def plot_dfg(df_graph):
+    fig, ax = plt.subplots(1, 1)
+    nxg = convert_dfg_nxg(df_graph)
+    draw_nxg(nxg, ax)
+    plt.show()
+
 def plot_accs(acc_branch_addrs, seq_profiles):
     # print(acc_branch_addrs)
     used_accs = [branch_addr for branch_addr in acc_branch_addrs if branch_addr != '0']

@@ -1,15 +1,16 @@
 from trace_analyser.df_graph import *
 from trace_analyser.latency_mappings import *
 from trace_analyser.logger import *
-
+from trace_analyser.graph_visualiser import plot_dfg
 
 class SequenceProfileEntry:
-    def __init__(self, cpu_time, acc_time, area_cost, reconf_time, df_graph):
+    def __init__(self, cpu_time, acc_time, area_cost, reconf_time, df_graph, initiation_interval):
         self.cpu_time = cpu_time
         self.acc_time = acc_time
         self.area_cost = area_cost
         self.reconf_time = reconf_time
         self.df_graph = df_graph
+        self.initiation_interval =  initiation_interval
 
 def find_node_depth(node, graph, cpu = False):
     if "lit" in graph.nodeLst[node] or "reg" in graph.nodeLst[node]:
@@ -27,7 +28,20 @@ def find_node_depth(node, graph, cpu = False):
     else:
         return get_ins_lat_acc(graph.nodeLst[node]) + max(inputNodeDepths)
 
+def get_feedback_depth(destNode, currNode, graph):
+    if currNode == destNode:
+        return 0
+    elif "reg" in graph.nodeLst[currNode] or "lit" in graph.nodeLst[currNode]: 
+        return -1 #-1 to signal traversal did not find node
 
+    inputNodes = [edge.fromNode for edge in graph.adjLst if edge.toNode == currNode]
+
+    for node in inputNodes:
+        depth_result = get_feedback_depth(destNode, node, graph)
+        if depth_result == -1:
+            return -1 #propagate traversal failed to find node
+        else:
+            return get_ins_lat_acc(graph.nodeLst[currNode]) + depth_result
 
 def profile_seq(inst_mem, start_addr, end_addr):
 
@@ -53,7 +67,15 @@ def profile_seq(inst_mem, start_addr, end_addr):
 
     reconf_time = len(df_graph.nodeLst) * FRAMES_PER_FU * RECONF_TIME_PER_FRAME * CPU_CLK_FREQ #in cycles
 
-    print("Acc Depth", maxDepthAcc)
-    print("CPU Depth", maxDepthCpu)
+    feedback_paths = df_graph.get_feedback_paths()
+    feedback_depths = list(map(lambda e: get_feedback_depth(e.toNode, e.fromNode, df_graph), feedback_paths))
+    max_init_interval = max(feedback_depths)
 
-    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph)
+    # print_line("Initiation interval", max_init_interval)
+    # if max_init_interval == 0:
+    #     plot_dfg(df_graph)
+
+    # print("Acc Depth", maxDepthAcc)
+    # print("CPU Depth", maxDepthCpu)
+
+    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph, max_init_interval)

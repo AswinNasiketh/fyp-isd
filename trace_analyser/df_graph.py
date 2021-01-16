@@ -38,6 +38,15 @@ class DFGraph:
         outputNodes = [i for i in allNodes if not i in intermediate_nodes]
         return outputNodes
 
+    def get_feedback_paths(self):
+        feedback_paths = []
+
+        for edge in self.adjLst:
+            if "reg" in self.nodeLst[edge.toNode]:
+                feedback_paths.append(edge)
+        
+        return feedback_paths
+
 fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
 
 def get_reg_name(reg_expr):
