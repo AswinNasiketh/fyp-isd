@@ -1,4 +1,5 @@
 
+from trace_analyser.trace_utils import get_base_instr
 #todo: needs to be updated with correct values of taiga cpu
 fetch_latency = 1
 decode_issue_latency = 2
@@ -203,10 +204,7 @@ def get_ins_lat_acc(instr):
     if "c." == instr[0:2]:
         if not instr in ins2funcacc.keys():
             instr = instr[2:] #strip compressed instruction prefix
-
-    instr_parts = instr.split(".")
-    if len(instr_parts) > 1:
-        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first .
+    instr = get_base_instr(instr)
     return func2latacc[ins2funcacc[instr]]
 
 
@@ -215,10 +213,7 @@ def get_ins_lat_cpu(instr):
         if not instr in ins2funccpu.keys():
             instr = instr[2:] #strip compressed instruction prefix
 
-    instr_parts = instr.split(".")
-    if len(instr_parts) > 1:
-        instr = instr_parts[0] + '.' + instr_parts[1] #only take opcode up to first .
-
+    instr = get_base_instr(instr)
     return func2latcpu[ins2funccpu[instr]]
 
 #todo:in future these dictionaries will be updated with different latencies for accelerator and CPU
