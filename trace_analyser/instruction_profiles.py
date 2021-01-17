@@ -1,0 +1,190 @@
+from trace_analyser.trace_utils import get_base_instr
+
+#Profiles for instructions for graph generation
+
+class InstructionProfile:
+
+    def __init__(self, fai = False, das = False):
+        self.fai = fai #fai - instruction uses first argument as input (no writeback)
+        self.das = das #das - instruction uses destination reg as source (same as above, with writeback)
+
+        if fai and das:
+            raise Exception("Bad Instruction Profile")
+
+defaultProf = InstructionProfile()
+faiProf = InstructionProfile(fai=True)
+dasProf = InstructionProfile(das=True)
+
+#profiles assigned using RISC-V Unprivilleged Specification https://riscv.org/technical/specifications/
+ins2prof = {
+    #*RV64I
+    "lb": defaultProf,
+    "lh": defaultProf,
+    "lw": defaultProf,
+    "ld": defaultProf,
+    "lbu": defaultProf,
+    "lhu": defaultProf,
+    "lwu": defaultProf,
+    "ldu": defaultProf,
+    "sb": faiProf,
+    "sh": faiProf,
+    "sw": faiProf,
+    "sd": faiProf,
+    "fld": defaultProf,
+    "fsd": faiProf,
+    "sll": defaultProf,
+    "slli": defaultProf,
+    "srli": defaultProf,
+    "srl": defaultProf,
+    "sra": defaultProf,
+    "srai": defaultProf,
+    "sllw": defaultProf,
+    "slliw": defaultProf,
+    "srliw": defaultProf,
+    "srlw": defaultProf,
+    "sraw": defaultProf,
+    "sraiw": defaultProf,
+    "slld": defaultProf,
+    "sllid": defaultProf,
+    "srlid": defaultProf,
+    "srld": defaultProf,
+    "srad": defaultProf,
+    "sraid": defaultProf,
+    "add": defaultProf,
+    "addi": defaultProf,
+    "sub": defaultProf,
+    "lui": defaultProf,
+    "auipc": defaultProf,
+    "addw": defaultProf,
+    "addiw": defaultProf,
+    "subw": defaultProf,
+    "addd": defaultProf,
+    "addid": defaultProf,
+    "subd": defaultProf,
+    "xor": defaultProf,
+    "xori": defaultProf,
+    "or": defaultProf,
+    "ori": defaultProf,
+    "and": defaultProf,
+    "andi": defaultProf,
+    "slt": defaultProf,
+    "slti": defaultProf,
+    "sltu": defaultProf,
+    "sltiu": defaultProf,
+    "beq": faiProf,
+    "bne": faiProf,
+    "blt": faiProf,
+    "bge": faiProf,
+    "bltu": faiProf,
+    "bgeu": faiProf,
+    "jal": defaultProf,
+    "jalr": defaultProf,
+    "fence": defaultProf,
+    "fence.i": defaultProf,
+    "scall": defaultProf,
+    "sbreak": defaultProf,
+    "rdcycle": defaultProf,
+    "rdcycleh": defaultProf,
+    "rdtime": defaultProf,
+    "rdtimeh": defaultProf,
+    "rdinstret": defaultProf,
+    "rdinstreth": defaultProf,
+    #*RV64M
+    "mul": defaultProf,
+    "mulw": defaultProf,
+    "muld": defaultProf,
+    "mulh": defaultProf,
+    "mulhu": defaultProf,
+    "mulhsu": defaultProf,
+    "div": defaultProf,
+    "divw": defaultProf,
+    "divd": defaultProf,
+    "divu": defaultProf,
+    "rem": defaultProf,
+    "remu": defaultProf,
+    "remw": defaultProf,
+    "remuw": defaultProf,
+    "remd": defaultProf,
+    "remud": defaultProf,
+    #*RV64A
+    "lr.w": defaultProf,
+    "lr.d": defaultProf,
+    "sc.w": defaultProf,
+    "sc.d": defaultProf,
+    "amoswap.w": defaultProf,
+    "amoadd.w": defaultProf,
+    "amoxor.w": defaultProf,
+    "amoand.w": defaultProf,
+    "amoor.w": defaultProf,
+    "amomin.w": defaultProf,
+    "amomax.w": defaultProf,
+    "amominu.w": defaultProf,
+    "amomaxu.w": defaultProf,
+    "amoswap.d": defaultProf,
+    "amoadd.d": defaultProf,
+    "amoxor.d": defaultProf,
+    "amoand.d": defaultProf,
+    "amoor.d": defaultProf,
+    "amomin.d": defaultProf,
+    "amomax.d": defaultProf,
+    "amominu.d": defaultProf,
+    "amomaxu.d": defaultProf,
+    #*RVC
+    "c.lw": defaultProf,
+    "c.lwsp": defaultProf,
+    "c.ld": defaultProf,
+    "c.ldsp": defaultProf,
+    "c.sw": faiProf,
+    "c.swsp": faiProf,
+    "c.sd": faiProf,
+    "c.fld": defaultProf,
+    "c.fsd": faiProf,
+    "c.sdsp": faiProf,
+    "c.fldsp": defaultProf,
+    "c.fsdsp": faiProf,
+    "c.add": dasProf,
+    "c.addw": dasProf,
+    "c.addi": dasProf,
+    "c.addiw": dasProf,
+    "c.addi16sp": dasProf,
+    "c.addi4spn": dasProf,
+    "c.li": defaultProf,
+    "c.lui": defaultProf,
+    "c.mv": defaultProf,
+    "c.sub": dasProf,
+    "c.slli": dasProf,
+    "c.beqz": faiProf,
+    "c.bnez": faiProf,
+    "c.j": faiProf,
+    "c.jr": faiProf,
+    "c.jal": faiProf,
+    "c.jalr": faiProf,
+    "c.ebreak": faiProf,
+    #*RV Privileged
+    "csrrw": defaultProf,
+    "csrrs": defaultProf,
+    "csrrc": defaultProf,
+    "csrrwi": defaultProf,
+    "csrrsi": defaultProf,
+    "csrrci": defaultProf,
+    "ecall": defaultProf,
+    "ebreak": defaultProf,
+    #profiles unknown after this for this section
+    "eret": defaultProf,
+    "mrts": defaultProf,
+    "mrth": defaultProf,
+    "hrts": defaultProf,
+    "wfi": defaultProf,
+    "sfence.vm": defaultProf,
+    #*MISC
+    "sc.w.aq": faiProf
+} 
+
+def get_instr_prof(instr):
+    if "c." == instr[0:2]:
+        if not instr in ins2prof.keys():
+            instr = instr[2:] #strip compressed instruction prefix
+
+    instr = get_base_instr(instr)
+
+    return ins2prof[instr]

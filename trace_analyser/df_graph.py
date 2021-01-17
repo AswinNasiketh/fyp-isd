@@ -1,5 +1,6 @@
 from trace_analyser.trace_utils import TraceLine
 from trace_analyser.logger import *
+from trace_analyser.instruction_profiles import get_instr_prof
 #data container class
 class DFGraphEdge:
     
@@ -47,7 +48,7 @@ class DFGraph:
         
         return feedback_paths
 
-fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
+# fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
 
 def get_reg_name(reg_expr):
     op_exprs = reg_expr.replace("(", " ").replace(")", " ").split(" ") #replace all brackets with spaces, then split by spaces
@@ -76,10 +77,8 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
         
         start_index = 1
 
-        for str_instr in fai_instructions:
-            if str_instr in instr.opcode:
-                start_index = 0
-                break
+        if get_instr_prof(instr.opcode).fai or get_instr_prof(instr.opcode).das:
+            start_index = 0
         
 
         for i in range(start_index, len(instr.operands)):
@@ -94,14 +93,14 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
                 if instr.operands[i].isdecimal() or "0x" in instr.operands[i] or "-" in instr.operands[i]:
                     inpNode = df_graph.addNode("lit(" + instr.operands[i] + ")")
                 else:
-                    inpNode = df_graph.addNode("reg(" + instr.operands[i] + ")")
+                    inpNode = df_graph.addNode("reg(" + get_reg_name(instr.operands[i]) + ")")
                     reg = get_reg_name(df_graph.nodeLst[inpNode])
                     reg_file[reg] = inpNode
                 df_graph.addEgde(DFGraphEdge(inpNode, nodeID))
 
 
-        if start_index == 1:
-            reg_file[instr.operands[0]] = nodeID
+        if start_index == 1 or get_instr_prof(instr.opcode).das:
+            reg_file[get_reg_name(instr.operands[0])] = nodeID
 
     #find feedback paths
     for nodeID, node in enumerate(df_graph.nodeLst):
