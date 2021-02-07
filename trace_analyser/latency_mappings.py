@@ -199,6 +199,12 @@ func2latcpu = {
     "ls": 4 + fetch_latency + decode_issue_latency
 } 
 
+def get_ins_func_acc(instr):
+    if "c." == instr[0:2]:
+        if not instr in ins2funcacc.keys():
+            instr = instr[2:] #strip compressed instruction prefix
+    instr = get_base_instr(instr)
+    return ins2funcacc[instr]
 
 def get_ins_lat_acc(instr):
     if "c." == instr[0:2]:

@@ -12,7 +12,7 @@ class SequenceProfileEntry:
         self.df_graph = df_graph
         self.initiation_interval =  initiation_interval
 
-def find_node_depth(node, graph, cpu = False):
+def find_node_depth(node, graph, cpu = False, no_weightings = False):
     if "lit" in graph.nodeLst[node] or "reg" in graph.nodeLst[node]:
         return 0
     
@@ -22,10 +22,13 @@ def find_node_depth(node, graph, cpu = False):
         inputNodeDepths.append(find_node_depth(inpNode, graph, cpu))
     
     # print_line(inputNodeDepths)
-    if cpu:
-        return get_ins_lat_cpu(graph.nodeLst[node]) + max(inputNodeDepths)
+    if no_weightings:
+        return 1 + max(inputNodeDepths)
     else:
-        return get_ins_lat_acc(graph.nodeLst[node]) + max(inputNodeDepths)
+        if cpu:
+            return get_ins_lat_cpu(graph.nodeLst[node]) + max(inputNodeDepths)
+        else:
+            return get_ins_lat_acc(graph.nodeLst[node]) + max(inputNodeDepths)
 
 def get_feedback_depth(destNode, currNode, graph):
     if currNode == destNode:
@@ -80,7 +83,7 @@ def profile_seq(inst_mem, start_addr, end_addr):
     # for path in feedback_paths:
     #     print("Feedback Path from", path.fromNode, "To", path.toNode)
     feedback_depths = list(map(lambda e: get_feedback_depth(e.toNode, e.fromNode, df_graph), feedback_paths))
-    max_init_interval = max(feedback_depths)
+    max_init_interval = max(feedback_depths, default= 1)
 
     # print_line("Initiation interval", max_init_interval)
     # if max_init_interval == 0:

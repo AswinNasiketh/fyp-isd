@@ -5,6 +5,7 @@ from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
 from trace_analyser.logger import *
 from trace_analyser.graph_visualiser import *
+import trace_analyser.interconnect_stats
 
 trace_file = 'trace_files/sim_cm20.trace'
 
@@ -25,7 +26,7 @@ print_line("Using trace", trace_file)
 
 
 def main():
-    branch_profile = BranchProfile(max_hit_count, max_area * 2)
+    branch_profile = BranchProfile(max_hit_count, max_area * 2) #area*2 is used for max_branch_dist heuristically because branch dist is in memory locations, and either 32, 64 or 16 bit instructions can be used. 
     new_seq_addresses = None
     counters_shifted = False
     sequence_selector = SequenceSelector(max_area, max_num_accelerators, num_bprof_entries, max_hit_count)
@@ -73,6 +74,10 @@ def main():
             
     print_line("Profiling done")
     cycle_counter.print_cycles()
-    branch_profile.dump_profile()
+
+    print_line("Gathering interconnect stats")
+    output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst = trace_analyser.interconnect_stats.extract_stats(sequence_profiles)
+    trace_analyser.interconnect_stats.display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst)
+    # branch_profile.dump_profile()
 
 main()

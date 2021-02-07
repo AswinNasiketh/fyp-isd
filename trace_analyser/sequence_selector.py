@@ -45,7 +45,7 @@ class SequenceSelector:
 
     
     def caclulate_advantage(self, seq_profile):
-        return seq_profile.cpu_time - seq_profile.acc_time
+        return seq_profile.cpu_time - seq_profile.acc_time #todo incorportate intiation interval
 
     def calculate_improvement(self, seq_profile, hits):
         return (self.caclulate_advantage(seq_profile) * hits) - (seq_profile.reconf_time * RECONF_PENALTY_MODIFIER)
