@@ -45,7 +45,7 @@ def main():
             #ignore lines of the trace which do not show instructions
             if line[0:2] != "pc":
                 continue
-            instr_addr = get_instr_addr(line)
+            instr_addr = get_instr_addr_dec_str(line)
             trace_line_obj = TraceLine(line)
             inst_mem[instr_addr] = trace_line_obj
             # print_line(inst_mem)
@@ -56,9 +56,9 @@ def main():
                 branch_inst_addr, branch_target_addr = new_seq_addresses
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
 
-            reconf_penalty = sequence_selector.update_accelerated_sequences(line, branch_profile, sequence_profiles)
+            reconf_penalty = sequence_selector.update_accelerated_sequences(trace_line_obj, branch_profile, sequence_profiles)
 
-            cycle_counter.count_line(line, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles, reconf_penalty)
+            cycle_counter.count_line(trace_line_obj, sequence_selector.accelerating_sequences, inst_mem, sequence_profiles, reconf_penalty)
 
             # if reconf_penalty > 0:
             #     print_line("Accelerators changing, showing dataflow graphs")

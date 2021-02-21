@@ -1,4 +1,4 @@
-def get_instr_addr(trace_line):
+def get_instr_addr_dec_str(trace_line):
     return str(int(trace_line.split()[0].split('=')[1], 16)) #*string of decimal integer representation of address
 
 

@@ -33,10 +33,9 @@ class SequenceSelector:
             seq.shift_num_hits_right()
 
     def update_hits(self, trace_line):
-        instr_addr = get_instr_addr(trace_line)
 
         for seq in self.accelerating_sequences:
-            if seq.branch_address == instr_addr:
+            if seq.branch_address == str(trace_line.instr_addr):
                 seq.increment_hits()
 
                 if seq.hits >= self.hit_saturate_limit:
