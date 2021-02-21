@@ -45,6 +45,7 @@ def extract_stats(sequence_profiles):
     depth_lst = []
     lsu_ops_lst = []
     size_lst = []
+    fb_path_num_lst = []
 
     for graph in graphs:
         output_multiplicites = get_output_multiplicites(graph)
@@ -69,6 +70,8 @@ def extract_stats(sequence_profiles):
 
         lsu_ops = get_num_lsu_ops(graph)
 
+        num_feedback_paths = len(graph.get_feedback_paths())
+
         output_mutiplicites_lst = output_mutiplicites_lst + output_multiplicites
         multi_branch_outputs_lst.append(multi_branch_outputs)
         input_count_lst.append(input_count)
@@ -76,10 +79,11 @@ def extract_stats(sequence_profiles):
         depth_lst.append(maxDepth)
         size_lst.append(len(graph.nodeLst))
         lsu_ops_lst.append(lsu_ops)
+        fb_path_num_lst.append(num_feedback_paths)
 
-    return output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst
+    return output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, fb_path_num_lst
 
-def display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst):
+def display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, fb_path_num_lst):
 
     fig, axs = plt.subplots(4,2)
     # print(output_mutiplicites_lst)
@@ -119,6 +123,11 @@ def display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_
     axs[3, 0].set_title('Number of load/store operations in a graph')
     axs[3, 0].set(ylabel='frequency')
     axs[3, 0].set_xticks(bins)
+
+    n, bins, patches = axs[3, 1].hist(x=fb_path_num_lst, bins=range(20))
+    axs[3, 1].set_title('Number of feedback paths in a graph')
+    axs[3, 1].set(ylabel='frequency')
+    axs[3, 1].set_xticks(bins)
 
     fig.tight_layout()
 

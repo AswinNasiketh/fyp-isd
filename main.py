@@ -42,6 +42,7 @@ def main():
             # print_line("Line number:", line_num)
             line_num += 1
 
+            #ignore lines of the trace which do not show instructions
             if line[0:2] != "pc":
                 continue
             instr_addr = get_instr_addr(line)
@@ -76,8 +77,8 @@ def main():
     cycle_counter.print_cycles()
 
     print_line("Gathering interconnect stats")
-    output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst = trace_analyser.interconnect_stats.extract_stats(sequence_profiles)
-    trace_analyser.interconnect_stats.display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst)
+    output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths = trace_analyser.interconnect_stats.extract_stats(sequence_profiles)
+    trace_analyser.interconnect_stats.display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths)
     # branch_profile.dump_profile()
 
 main()
