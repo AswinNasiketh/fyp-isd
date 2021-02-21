@@ -17,9 +17,9 @@ class TraceLine:
     def __init__(self, trace_line):
         self.fields = trace_line.split()
         
-        self.instr_addr = fields[0].split('=')[1]
-        self.opcode = fields[1]
-        self.operands = fields[2].split(',')
+        self.instr_addr = self.fields[0].split('=')[1]
+        self.opcode = self.fields[1]
+        self.operands = self.fields[2].split(',')
 
 
 
