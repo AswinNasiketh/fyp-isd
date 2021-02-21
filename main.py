@@ -46,10 +46,11 @@ def main():
             if line[0:2] != "pc":
                 continue
             instr_addr = get_instr_addr(line)
-            inst_mem[instr_addr] = TraceLine(line)
+            trace_line_obj = TraceLine(line)
+            inst_mem[instr_addr] = trace_line_obj
             # print_line(inst_mem)
             
-            new_seq_addresses, counters_shifted = branch_profile.process_trace_line(line)
+            new_seq_addresses, counters_shifted = branch_profile.process_trace_line(trace_line_obj)
 
             if new_seq_addresses != None:
                 branch_inst_addr, branch_target_addr = new_seq_addresses

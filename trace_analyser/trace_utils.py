@@ -15,9 +15,12 @@ def get_base_instr(instr):
 class TraceLine:
     
     def __init__(self, trace_line):
-        fields = trace_line.split()
-
+        self.fields = trace_line.split()
+        
+        self.instr_addr = fields[0].split('=')[1]
         self.opcode = fields[1]
         self.operands = fields[2].split(',')
+
+
 
         

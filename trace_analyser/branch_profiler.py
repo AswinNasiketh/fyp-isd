@@ -82,24 +82,20 @@ class BranchProfile:
         for profile in self.branches:
             profile.shift_count_right()
     
-    def process_trace_line(self, line):
-        fields = line.split() #splits line into list, delimiter is spaces by default
-
-        instr_addr = fields[0].split('=')[1] 
-        # print_line(instr_addr)
+    def process_trace_line(self, trace_line):
 
         new_seq_identified = None
         #processing for previous line if required
         if self.process_next_iter:
             self.process_next_iter = False
             #only add backward branches up to a maximum distance
-            branch_displacement = int(instr_addr, base=16) - int(self.addr_next_iter, base=16)
+            branch_displacement = int(trace_line.instr_addr, base=16) - int(self.addr_next_iter, base=16)
             if branch_displacement < 0 and branch_displacement >= -self.max_branch_dist:
-                self.add_new_branch_profile(self.addr_next_iter, instr_addr)  
-                new_seq_identified = self.addr_next_iter, instr_addr    
+                self.add_new_branch_profile(self.addr_next_iter, trace_line.instr_addr)  
+                new_seq_identified = self.addr_next_iter, trace_line.instr_addr    
         
         counters_shifted = False
-        branch_entry = self.is_branch_cached(instr_addr)
+        branch_entry = self.is_branch_cached(trace_line.instr_addr)
         if branch_entry != False:
             branch_entry.increment_taken_count()
             if branch_entry.num_branch_taken > self.branch_counter_limit:
@@ -107,66 +103,65 @@ class BranchProfile:
                 counters_shifted = True
         else:
             #check if backward branch and add to list
-            opcode = fields[1]
             
-            if opcode in self.branch_opcodes:
+            if trace_line.opcode in self.branch_opcodes:
                 # print_line("new instr found opcode:", instr_addr )
-                if opcode == "c.j" or opcode == "c.jal" or opcode == "c.jr" or opcode == "c.jalr" or opcode == "jalr" or opcode == "jal" or "j": #unconditional branches
-                    self.process_on_next_line(instr_addr)
-                elif opcode == "c.beqz":
-                    rs1_val = fields[-1].split('=')[1]
+                if trace_line.opcode == "c.j" or trace_line.opcode == "c.jal" or trace_line.opcode == "c.jr" or trace_line.opcode == "c.jalr" or trace_line.opcode == "jalr" or trace_line.opcode == "jal" or "j": #unconditional branches
+                    self.process_on_next_line(trace_line.instr_addr)
+                elif trace_line.opcode == "c.beqz":
+                    rs1_val = trace_line.fields[-1].split('=')[1]
                     if rs1_val == 0:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
                 
-                elif opcode == "c.bnez":
-                    rs1_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "c.bnez":
+                    rs1_val = trace_line.fields[-1].split('=')[1]
                     if rs1_val != 0:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
                 
-                elif opcode == "beq":
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "beq":
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
 
                     if rs1_val == rs2_val:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
                 
-                elif opcode == "bne":
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "bne":
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
 
                     if rs1_val != rs2_val:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
 
-                elif opcode == "blt":
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "blt":
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
 
                     #by default python converts hex to uint
                     
                     if hex2sint(rs1_val) < hex2sint(rs2_val):
-                        self.process_on_next_line(instr_addr)
-                elif opcode == "bge":
+                        self.process_on_next_line(trace_line.instr_addr)
+                elif trace_line.opcode == "bge":
 
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
                     
                     if hex2sint(rs1_val) >= hex2sint(rs2_val):
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
                 
-                elif opcode == "bltu":
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "bltu":
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
                     
                     if rs1_val < rs2_val:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
     
 
-                elif opcode == "bgeu":
-                    rs1_val = fields[-2].split('=')[1]
-                    rs2_val = fields[-1].split('=')[1]
+                elif trace_line.opcode == "bgeu":
+                    rs1_val = trace_line.fields[-2].split('=')[1]
+                    rs2_val = trace_line.fields[-1].split('=')[1]
                     
                     if rs1_val >= rs2_val:
-                        self.process_on_next_line(instr_addr)
+                        self.process_on_next_line(trace_line.instr_addr)
                 
         return new_seq_identified, counters_shifted
     
