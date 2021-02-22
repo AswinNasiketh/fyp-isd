@@ -29,7 +29,7 @@ def get_input_count(dfg):
 def get_num_lsu_ops(dfg):
     lsu_op_count = 0
     for node in dfg.nodeLst:
-        if (not "reg" in node) and (not "lit" in node):
+        if (not "reg" in node) and (not "lit" in node) and (not "out" in node):
             if get_ins_func_acc(node) == "ls":
                 lsu_op_count += 1
 

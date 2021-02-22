@@ -1,4 +1,3 @@
-from trace_analyser.trace_utils import get_instr_addr
 from trace_analyser.latency_mappings import *
 import functools
 from trace_analyser.logger import *

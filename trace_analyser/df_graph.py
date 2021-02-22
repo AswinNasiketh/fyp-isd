@@ -4,9 +4,11 @@ from trace_analyser.instruction_profiles import get_instr_prof
 #data container class
 class DFGraphEdge:
     
-    def __init__(self, fromNode, toNode):
+    def __init__(self, fromNode, toNode, reg):
         self.fromNode = fromNode
         self.toNode = toNode
+        self.reg = reg
+
 
 class DFGraph:
 
@@ -32,11 +34,14 @@ class DFGraph:
     def get_output_nodes(self):
         intermediate_nodes = []
         for edge in self.adjLst:
-            if (not (edge.fromNode in intermediate_nodes)) and (not ("reg" in self.nodeLst[edge.toNode])): #if the nodes output is not a register, and its an intermediate node
+            intermidiate_node_criteria = not (edge.fromNode in intermediate_nodes) and not ("reg" in self.nodeLst[edge.toNode]) and not ("out" in self.nodeLst[edge.toNode])
+            #if the nodes output is not a feedback or output register then it is an intermediate node
+            #first condition to ensure uniqueness
+            if intermidiate_node_criteria: 
                 intermediate_nodes.append(edge.fromNode)
 
         allNodes = [i for i in range(len(self.nodeLst))]
-        outputNodes = [i for i in allNodes if not i in intermediate_nodes]
+        outputNodes = [i for i in allNodes if not i in intermediate_nodes and not "out" in self.nodeLst[i]]
         return outputNodes
 
     def get_feedback_paths(self):
@@ -71,10 +76,12 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
     # print(inst_mem_sorted)
     inst_mem_sorted = [instr[1] for instr in inst_mem_sorted if int(instr[0]) >= seq_start_addr and int(instr[0]) < seq_stop_addr]
 
-    for instr in inst_mem_sorted:
+    node2instr = {} #for finding non feedback output node registers
+    for instrNum, instr in enumerate(inst_mem_sorted):
         
         nodeID = df_graph.addNode(instr.opcode)
-        
+        node2instr[str(nodeID)] = instrNum
+
         start_index = 1
 
         if get_instr_prof(instr.opcode).fai or get_instr_prof(instr.opcode).das:
@@ -86,17 +93,18 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
             for key in reg_file.keys():
                 if key in instr.operands[i]:
                     fromNodeID = reg_file[key]
-                    df_graph.addEgde(DFGraphEdge(fromNodeID, nodeID))
+                    df_graph.addEgde(DFGraphEdge(fromNodeID, nodeID, key))
                     break
 
             if fromNodeID == -1:
                 if instr.operands[i].isdecimal() or "0x" in instr.operands[i] or "-" in instr.operands[i]:
                     inpNode = df_graph.addNode("lit(" + instr.operands[i] + ")")
+                    df_graph.addEgde(DFGraphEdge(inpNode, nodeID, 'lit'))
                 else:
-                    inpNode = df_graph.addNode("reg(" + get_reg_name(instr.operands[i]) + ")")
-                    reg = get_reg_name(df_graph.nodeLst[inpNode])
-                    reg_file[reg] = inpNode
-                df_graph.addEgde(DFGraphEdge(inpNode, nodeID))
+                    regName = get_reg_name(instr.operands[i])
+                    inpNode = df_graph.addNode("reg(" + regName + ")")
+                    reg_file[regName] = inpNode
+                    df_graph.addEgde(DFGraphEdge(inpNode, nodeID, regName))
 
 
         if start_index == 1 or get_instr_prof(instr.opcode).das:
@@ -110,7 +118,28 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
         reg = get_reg_name(node)
         # print("Inp reg", reg)
         if reg in reg_file.keys():
-            df_graph.addEgde(DFGraphEdge(reg_file[reg], nodeID))
+            df_graph.addEgde(DFGraphEdge(reg_file[reg], nodeID, reg))
+    
+    #add registers for output nodes
+    opNodes = df_graph.get_output_nodes()
+    for node in opNodes:
+        feedback_node = False
+        for edge in df_graph.adjLst:
+            if edge.fromNode == node: #will only be true if output node has a feedback connection to a reg
+                feedback_node = True
+                break
+        if feedback_node:
+            continue
+        else:
+            opcode = df_graph.nodeLst[node]
+            instr_prof = get_instr_prof(opcode)
+            if not instr_prof.fai: 
+                #instruction has writeback 
+                instrNum = node2instr[str(node)]
+                instr = inst_mem_sorted[instrNum]
+                opRegName = get_reg_name(instr.operands[0])
+                opNodeID = df_graph.addNode("out(" + opRegName + ")")
+                df_graph.addEgde(DFGraphEdge(node, opNodeID, opRegName))
 
     return df_graph
 

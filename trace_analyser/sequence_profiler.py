@@ -21,7 +21,6 @@ def find_node_depth(node, graph, cpu = False, no_weightings = False):
     for inpNode in inputNodes:
         inputNodeDepths.append(find_node_depth(inpNode, graph, cpu))
     
-    # print_line(inputNodeDepths)
     if no_weightings:
         return 1 + max(inputNodeDepths)
     else:
@@ -41,19 +40,10 @@ def get_feedback_depth(destNode, currNode, graph):
     feedback_depths = list(map(lambda n: get_feedback_depth(destNode, n, graph), inputNodes))
     feedback_depths = [d for d in feedback_depths if d != -1]
 
-    # print("Feedback depths length", len(feedback_depths))
-
     if len(feedback_depths) > 0:
         return  get_ins_lat_acc(graph.nodeLst[currNode]) + max(feedback_depths)
     else:
         return -1 #propagate traversal failed to find node
-
-    # for node in inputNodes:
-    #     depth_result = get_feedback_depth(destNode, node, graph)
-    #     if depth_result == -1:
-    #         return -1 
-    #     else:
-    #         return get_ins_lat_acc(graph.nodeLst[currNode]) + depth_result
 
 def profile_seq(inst_mem, start_addr, end_addr):
 
@@ -80,16 +70,9 @@ def profile_seq(inst_mem, start_addr, end_addr):
     reconf_time = len(df_graph.nodeLst) * FRAMES_PER_FU * RECONF_TIME_PER_FRAME * CPU_CLK_FREQ #in cycles
 
     feedback_paths = df_graph.get_feedback_paths()
-    # for path in feedback_paths:
-    #     print("Feedback Path from", path.fromNode, "To", path.toNode)
+
     feedback_depths = list(map(lambda e: get_feedback_depth(e.toNode, e.fromNode, df_graph), feedback_paths))
     max_init_interval = max(feedback_depths, default= 1)
 
-    # print_line("Initiation interval", max_init_interval)
-    # if max_init_interval == 0:
-    #     plot_dfg(df_graph)
-
-    # print("Acc Depth", maxDepthAcc)
-    # print("CPU Depth", maxDepthCpu)
 
     return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph, max_init_interval)
