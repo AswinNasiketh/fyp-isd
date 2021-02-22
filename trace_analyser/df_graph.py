@@ -53,7 +53,8 @@ class DFGraph:
         
         return feedback_paths
 
-# fai_instructions = ["sw", "sh", "sd", "sb", "c.j", "c.jr", "beq", "bne", "blt", "bltu", "bge", "bgeu"] #first argument as input instructions
+    def add_final_reg_wbs(self, reg_file):
+        self.final_reg_wbs = reg_file
 
 def get_reg_name(reg_expr):
     op_exprs = reg_expr.replace("(", " ").replace(")", " ").split(" ") #replace all brackets with spaces, then split by spaces
@@ -119,6 +120,8 @@ def createDFGraph(inst_mem, seq_start_addr, seq_stop_addr):
         # print("Inp reg", reg)
         if reg in reg_file.keys():
             df_graph.addEgde(DFGraphEdge(reg_file[reg], nodeID, reg))
+    
+    df_graph.add_final_reg_wbs(reg_file)
     
     #add registers for output nodes
     opNodes = df_graph.get_output_nodes()

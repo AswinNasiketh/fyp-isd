@@ -69,7 +69,7 @@ def LSUCongestionCost(pg:PRGrid):
     return cost
 
 def outputCongestionCost(pg:PRGrid, dfg:DFGraph):
-    opNodes = dfg.get_output_nodes()
+    opNodes = [wb[1] for wb in dfg.final_reg_wbs.items()]
 
     cost = 0
     for row in pg.slots:
@@ -164,4 +164,3 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 
 #* in random switching function allow x and y direction switches for all nodes, except pt nodes, which are deleted
 #*nodes for literals will need to be initialised when accelerator is started
-#*find intermediate outputs
