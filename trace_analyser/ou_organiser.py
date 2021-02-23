@@ -13,6 +13,9 @@
 from trace_analyser.latency_mappings import get_ins_func_acc
 from trace_analyser.df_graph import DFGraph
 import copy
+import random
+from math import exp
+import statistics
 
 
 class PRUnit:
@@ -25,8 +28,10 @@ class PRGrid:
     def __init__(self, n, m):
         self.n = n
         self.m = m
-        innerArray = [None] * m #m columns
-        self.slots = innerArray * n #n rows
+        self.slots = []
+        for i in range(n):
+            innerArray = [None] * m #m columns
+            self.slots.append(innerArray) #n rows
 
 
     def scatterDFG(self, dfg: DFGraph):
@@ -39,17 +44,22 @@ class PRGrid:
                 num_slots_filled += 1
 
 
-#*returns number of unused slots and passthroughs in PRGrid. 
-def gapsCost(pg:PRGrid):
-    flatennedGrid = [slotItem for row in pg.slots for slotItem in row]
-    cost = 0
-    for ou in flatennedGrid:
-        if ou == None:
-            cost += 1
-        elif "pt(" in ou.opcode:
-            cost += 1
-    
-    return cost
+#*returns diffence between size of prgrid based on boundaries and number of slots needed by dfg
+def gapsCost(pg:PRGrid, dfg:DFGraph):
+    rightmost_used_col = 1
+    highest_used_row = 1
+    for rowNum, row in enumerate(pg.slots):
+        for colNum, ou in enumerate(row):
+            if ou != None:
+                highest_used_row = rowNum + 1
+
+                if (colNum + 1) > rightmost_used_col:
+                    rightmost_used_col = colNum + 1
+
+    slotsUsed = rightmost_used_col * highest_used_row
+    nOPRegs = len([node for node in dfg.nodeLst if (not "out" in node)])
+    minSlotsNeeded = len(dfg.nodeLst) - nOPRegs
+    return slotsUsed - minSlotsNeeded
 
 def LSUCongestionCost(pg:PRGrid):
     cost = 0
@@ -103,8 +113,9 @@ def inputCongestionCost(pg:PRGrid):
 def findNodePos(pg:PRGrid, nodeID):
     for rowNum, row in enumerate(pg.slots):
         for colNum, ou in enumerate(row):
-            if ou.nodeID == nodeID:
-                return (rowNum, colNum)
+            if ou != None:
+                if ou.nodeID == nodeID:
+                    return (rowNum, colNum)
 
 def findPath(pg:PRGrid, fromNodePos, toNodePos):
     pathFound = False
@@ -127,7 +138,7 @@ def findPath(pg:PRGrid, fromNodePos, toNodePos):
             for col, ou in enumerate(pg.slots[row]):
                 if ou == None:
                     #*mark slot as used passthrough so other paths cant use it
-                    ptMods.append((row, col, PRUnit("pt(" + fromNodePos[0] + "," + fromNodePos[1] + ")", -1)))
+                    ptMods.append((row, col, PRUnit("pt(" + str(fromNodePos[0]) + "," + str(fromNodePos[1]) + ")", -1)))
                     break
         else:
             break
@@ -162,5 +173,106 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
         if not edgeMade:
             cost += 1
 
+    return cost
+
 #* in random switching function allow x and y direction switches for all nodes, except pt nodes, which are deleted
 #*nodes for literals will need to be initialised when accelerator is started
+
+def calculateTotalCost(pg, dfg):
+    cost = 0
+
+    cost += gapsCost(pg, dfg)
+    cost += LSUCongestionCost(pg)
+    cost += outputCongestionCost(pg, dfg)
+    cost += inputCongestionCost(pg)
+    cost += unconnectedNetsCost(pg, dfg)
+    return cost
+
+def makeRandomChange(pg, maxStepX, maxStepY):
+    x = random.randint(0, pg.n - 1) #*rng is inclusive of both boundaries
+    y = random.randint(0, pg.m - 1)
+
+    nextXUB = x + maxStepX #*upper bound on x step
+    nextXLB = x - maxStepX
+    nextYUB = y + maxStepY
+    nextYLB = y - maxStepY
+
+    if nextXLB < 0:
+        nextXLB = 0
+    if nextXUB >= pg.n:
+        nextXUB = pg.n - 1
+    
+    if nextYLB < 0:
+        nextYLB = 0
+    if nextYUB >= pg.m:
+        nextYUB = pg.m - 1
+
+    nextX = random.randint(nextXLB, nextXLB)
+    nextY = random.randint(nextYLB, nextYUB)
+
+
+    unitToSwap = pg.slots[x][y]
+    unitSwapped = pg.slots[nextX][nextY] 
+
+    if unitToSwap != None:
+        if "pt(" in unitToSwap.opcode:
+            unitToSwap = None
+
+    if unitSwapped != None:
+        if "pt(" in unitSwapped.opcode:
+            unitSwapped = None
+        
+    pg.slots[x][y] = unitSwapped
+    pg.slots[nextX][nextY] = unitToSwap
+
+    return pg
+
+
+#*VPR based initial temperature selection
+def selectTemp(pg: PRGrid, dfg: DFGraph, maxStepX, maxStepY):
+    n_blocks = len([node for node in dfg.nodeLst if (not "out" in node)])
+    cost_list = [calculateTotalCost(pg, dfg)]
+    for i in range(n_blocks):
+        pg = makeRandomChange(pg, maxStepX, maxStepY)
+        cost = calculateTotalCost(pg, dfg)
+        cost_list.append(cost)
+    
+    std = statistics.stdev(cost_list)
+    print("std", std)
+    return pg, round(20 * std)
+
+
+def anneal(pg, dfg, n_iterations, maxStepX, maxStepY, initTemp):
+    curr = pg
+    currCost = calculateTotalCost(pg, dfg)
+
+    for i in range(n_iterations):
+        pgCopy = copy.deepcopy(curr)
+        pgCopy = makeRandomChange(pgCopy, maxStepX, maxStepY)
+        newCost = calculateTotalCost(pgCopy, dfg)
+
+        diff = newCost - currCost
+        t = initTemp/float(i+1)
+
+        acceptanceProb = exp(-diff/t)
+        if diff < 0 or random.random() < acceptanceProb:
+            curr = pgCopy
+            currCost = newCost
+    
+    return curr, currCost
+
+def genPRGrid(dfg, numRows, numColumns):
+    pg = PRGrid(numRows, numColumns)
+
+    pg.scatterDFG(dfg)
+    pg, initTemp = selectTemp(pg, dfg, 2, 2)
+    
+
+    pg, _ = anneal(pg, dfg, initTemp * 100, 2, 2, initTemp)
+
+    print("Unconnected Nets", unconnectedNetsCost(pg, dfg))
+    print("LSU Congestion Cost", LSUCongestionCost(pg))
+    print("Output Congestion Cost", outputCongestionCost(pg, dfg))
+    print("Input Congestion Cost", inputCongestionCost(pg))
+
+    return pg
