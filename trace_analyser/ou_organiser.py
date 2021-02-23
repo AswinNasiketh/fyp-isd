@@ -44,6 +44,15 @@ class PRGrid:
                 num_slots_filled += 1
         return num_slots_filled
 
+    def visualise(self):
+        for row in self.slots:
+            for ou in row:
+                if ou != None:
+                    print(str(ou.nodeID), ":", ou.opcode, end="\t")
+                else:
+                    print("None", end="\t")
+            print()
+
 
 #*returns diffence between size of prgrid based on boundaries and number of slots needed by dfg
 def gapsCost(pg:PRGrid, dfg:DFGraph):
@@ -69,7 +78,7 @@ def LSUCongestionCost(pg:PRGrid):
 
         for ou in row:
             if ou != None:
-                if (not "lit" in ou.opcode) and (not "reg" in ou.opcode):
+                if (not "lit" in ou.opcode) and (not "reg" in ou.opcode) and (not "pt(" in ou.opcode):
                     ou_type = get_ins_func_acc(ou.opcode)
                     if ou_type == "ls":
                         num_lsus += 1
@@ -157,8 +166,14 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 
     intermediateEdges = [edge for edge in dfg.adjLst if not edge.fromNode in opNodes]
 
-    cost = 0
+    #*filter out edges to regs - these are feedback paths and will be done without direct connections
+    #* filter out edges to self - this is a bug
 
+    intermediateEdges = [edge for edge in intermediateEdges if (not "reg" in dfg.nodeLst[edge.toNode])]
+    intermediateEdges = [edge for edge in intermediateEdges if edge.fromNode != edge.toNode]
+
+    cost = 0
+    unconnectedNets = []
     for edge in intermediateEdges:
         edgeMade = False
         fromNodePos = findNodePos(pg, edge.fromNode)
@@ -173,8 +188,9 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 
         if not edgeMade:
             cost += 1
+            unconnectedNets.append(edge)
 
-    return cost
+    return cost, pg, unconnectedNets
 
 #* in random switching function allow x and y direction switches for all nodes, except pt nodes, which are deleted
 #*nodes for literals will need to be initialised when accelerator is started
@@ -186,7 +202,8 @@ def calculateTotalCost(pg, dfg):
     cost += LSUCongestionCost(pg)
     cost += outputCongestionCost(pg, dfg)
     cost += inputCongestionCost(pg)
-    cost += unconnectedNetsCost(pg, dfg)
+    costUN, _, _ = unconnectedNetsCost(pg, dfg)
+    cost += costUN
     return cost
 
 def makeRandomChange(pg, swapDistX, swapDistY):
@@ -246,7 +263,7 @@ def canExitAnneal(temp, pg, dfg):
     if temp < TEMP_THRESHOLD:
         return True
 
-    unetCost = unconnectedNetsCost(pg, dfg)
+    unetCost, _, _ = unconnectedNetsCost(pg, dfg)
     lsuCongCost = LSUCongestionCost(pg)
     inpCongCost = inputCongestionCost(pg)
     opCongCost = outputCongestionCost(pg, dfg)
@@ -307,9 +324,13 @@ def genPRGrid(dfg, numRows, numColumns):
     iters_per_temp = round(10 * (n_blocks**1.33))
     pg, _ = anneal(pg, dfg, iters_per_temp, numRows, numColumns, initTemp)
 
-    print("Unconnected Nets", unconnectedNetsCost(pg, dfg))
-    print("LSU Congestion Cost", LSUCongestionCost(pg))
-    print("Output Congestion Cost", outputCongestionCost(pg, dfg))
-    print("Input Congestion Cost", inputCongestionCost(pg))
+    unCost, newPG, UNs = unconnectedNetsCost(pg, dfg)
+    print("Unconnected Nets", unCost)
+    print("LSU Congestion Cost", LSUCongestionCost(newPG))
+    print("Output Congestion Cost", outputCongestionCost(newPG, dfg))
+    print("Input Congestion Cost", inputCongestionCost(newPG))
 
-    return pg
+    print("Unconnected nets")
+    for edge in UNs:
+        print("edge from", edge.fromNode, "to", edge.toNode)
+    return newPG

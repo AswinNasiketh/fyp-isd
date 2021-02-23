@@ -1,4 +1,6 @@
 from random import sample
+
+from matplotlib.pyplot import plot_date
 from trace_analyser.branch_profiler import *
 from trace_analyser.sequence_selector import *
 from trace_analyser.cycle_counter import *
@@ -57,10 +59,13 @@ def main():
                 branch_inst_addr, branch_target_addr = new_seq_addresses
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
                 sample_seq = sequence_profiles[branch_inst_addr]
+                print(branch_inst_addr, branch_target_addr)
                 break
 
             
         
-    pg = genPRGrid(sample_seq.df_graph, 10, 10)
-    
+    pg = genPRGrid(sample_seq.df_graph, 6, 6)
+    pg.visualise()
+    plot_dfg(sample_seq.df_graph)
+
 main()
