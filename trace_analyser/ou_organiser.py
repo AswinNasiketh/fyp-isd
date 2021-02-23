@@ -42,6 +42,7 @@ class PRGrid:
                 colNum = num_slots_filled % self.m
                 self.slots[rowNum][colNum] = PRUnit(node, i)
                 num_slots_filled += 1
+        return num_slots_filled
 
 
 #*returns diffence between size of prgrid based on boundaries and number of slots needed by dfg
@@ -229,8 +230,7 @@ def makeRandomChange(pg, maxStepX, maxStepY):
 
 
 #*VPR based initial temperature selection
-def selectTemp(pg: PRGrid, dfg: DFGraph, maxStepX, maxStepY):
-    n_blocks = len([node for node in dfg.nodeLst if (not "out" in node)])
+def selectTemp(pg: PRGrid, dfg: DFGraph, n_blocks, maxStepX, maxStepY):
     cost_list = [calculateTotalCost(pg, dfg)]
     for i in range(n_blocks):
         pg = makeRandomChange(pg, maxStepX, maxStepY)
@@ -241,34 +241,63 @@ def selectTemp(pg: PRGrid, dfg: DFGraph, maxStepX, maxStepY):
     print("std", std)
     return pg, round(20 * std)
 
+def canExitAnneal(temp, pg, dfg):
+    TEMP_THRESHOLD = 0.0001
+    if temp < TEMP_THRESHOLD:
+        return True
 
-def anneal(pg, dfg, n_iterations, maxStepX, maxStepY, initTemp):
+    unetCost = unconnectedNetsCost(pg, dfg)
+    lsuCongCost = LSUCongestionCost(pg)
+    inpCongCost = inputCongestionCost(pg)
+    opCongCost = outputCongestionCost(pg, dfg)
+
+    return (unetCost == 0) and (lsuCongCost == 0) and (inpCongCost == 0) and (opCongCost == 0)
+
+#*VPR temperature schedule
+def newTempModifier(propAccepted):
+    if propAccepted > 0.96:
+        return 0.5
+    elif (propAccepted > 0.8) and (propAccepted <= 0.96):
+        return 0.9
+    elif (propAccepted > 0.15) and (propAccepted <= 0.8):
+        0.95
+    else:
+        return 0.8
+
+def anneal(pg, dfg, iters_per_temp, maxStepX, maxStepY, initTemp):
     curr = pg
     currCost = calculateTotalCost(pg, dfg)
 
-    for i in range(n_iterations):
-        pgCopy = copy.deepcopy(curr)
-        pgCopy = makeRandomChange(pgCopy, maxStepX, maxStepY)
-        newCost = calculateTotalCost(pgCopy, dfg)
+    temp = initTemp
 
-        diff = newCost - currCost
-        t = initTemp/float(i+1)
+    while not canExitAnneal(temp, curr, dfg):
+        nAccepted = 0
+        for i in range(iters_per_temp):
+            pgCopy = copy.deepcopy(curr)
+            pgCopy = makeRandomChange(pgCopy, maxStepX, maxStepY)
+            newCost = calculateTotalCost(pgCopy, dfg)
 
-        acceptanceProb = exp(-diff/t)
-        if diff < 0 or random.random() < acceptanceProb:
-            curr = pgCopy
-            currCost = newCost
+            diff = newCost - currCost
+
+            acceptanceProb = exp(-diff/temp)
+            if diff < 0 or random.random() < acceptanceProb:
+                curr = pgCopy
+                currCost = newCost
+                nAccepted += 1
+        
+        propAccepted = nAccepted/float(iters_per_temp)
+        temp = newTempModifier(propAccepted) * temp
+
     
     return curr, currCost
 
 def genPRGrid(dfg, numRows, numColumns):
     pg = PRGrid(numRows, numColumns)
 
-    pg.scatterDFG(dfg)
-    pg, initTemp = selectTemp(pg, dfg, 2, 2)
-    
-
-    pg, _ = anneal(pg, dfg, initTemp * 100, 2, 2, initTemp)
+    n_blocks = pg.scatterDFG(dfg)
+    pg, initTemp = selectTemp(pg, dfg, n_blocks, 2, 2)
+    iters_per_temp = round(10 * (n_blocks**1.33))
+    pg, _ = anneal(pg, dfg, iters_per_temp, 2, 2, initTemp)
 
     print("Unconnected Nets", unconnectedNetsCost(pg, dfg))
     print("LSU Congestion Cost", LSUCongestionCost(pg))
