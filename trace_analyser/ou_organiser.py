@@ -189,14 +189,14 @@ def calculateTotalCost(pg, dfg):
     cost += unconnectedNetsCost(pg, dfg)
     return cost
 
-def makeRandomChange(pg, maxStepX, maxStepY):
+def makeRandomChange(pg, swapDistX, swapDistY):
     x = random.randint(0, pg.n - 1) #*rng is inclusive of both boundaries
     y = random.randint(0, pg.m - 1)
 
-    nextXUB = x + maxStepX #*upper bound on x step
-    nextXLB = x - maxStepX
-    nextYUB = y + maxStepY
-    nextYLB = y - maxStepY
+    nextXUB = x + swapDistX #*upper bound on x swap
+    nextXLB = x - swapDistX
+    nextYUB = y + swapDistY
+    nextYLB = y - swapDistY
 
     if nextXLB < 0:
         nextXLB = 0
@@ -230,10 +230,10 @@ def makeRandomChange(pg, maxStepX, maxStepY):
 
 
 #*VPR based initial temperature selection
-def selectTemp(pg: PRGrid, dfg: DFGraph, n_blocks, maxStepX, maxStepY):
+def selectTemp(pg: PRGrid, dfg: DFGraph, n_blocks, swapDistX, swapDistY):
     cost_list = [calculateTotalCost(pg, dfg)]
     for i in range(n_blocks):
-        pg = makeRandomChange(pg, maxStepX, maxStepY)
+        pg = makeRandomChange(pg, swapDistX, swapDistY)
         cost = calculateTotalCost(pg, dfg)
         cost_list.append(cost)
     
@@ -242,7 +242,7 @@ def selectTemp(pg: PRGrid, dfg: DFGraph, n_blocks, maxStepX, maxStepY):
     return pg, round(20 * std)
 
 def canExitAnneal(temp, pg, dfg):
-    TEMP_THRESHOLD = 0.0001
+    TEMP_THRESHOLD = 0.0005
     if temp < TEMP_THRESHOLD:
         return True
 
@@ -260,21 +260,27 @@ def newTempModifier(propAccepted):
     elif (propAccepted > 0.8) and (propAccepted <= 0.96):
         return 0.9
     elif (propAccepted > 0.15) and (propAccepted <= 0.8):
-        0.95
+        return 0.95
     else:
         return 0.8
 
-def anneal(pg, dfg, iters_per_temp, maxStepX, maxStepY, initTemp):
+def newSwapDistModifier(propAccepted):
+    return 1 - 0.44 + propAccepted
+
+def anneal(pg, dfg, iters_per_temp, initSwapDistX, initSwapDistY, initTemp):
     curr = pg
     currCost = calculateTotalCost(pg, dfg)
 
     temp = initTemp
 
+    swapDistX = initSwapDistX
+    swapDistY = initSwapDistY
+
     while not canExitAnneal(temp, curr, dfg):
         nAccepted = 0
         for i in range(iters_per_temp):
             pgCopy = copy.deepcopy(curr)
-            pgCopy = makeRandomChange(pgCopy, maxStepX, maxStepY)
+            pgCopy = makeRandomChange(pgCopy, swapDistX, swapDistY)
             newCost = calculateTotalCost(pgCopy, dfg)
 
             diff = newCost - currCost
@@ -287,17 +293,19 @@ def anneal(pg, dfg, iters_per_temp, maxStepX, maxStepY, initTemp):
         
         propAccepted = nAccepted/float(iters_per_temp)
         temp = newTempModifier(propAccepted) * temp
+        swapDistMod = newSwapDistModifier(propAccepted)
+        swapDistX = swapDistX * swapDistMod
+        swapDistY = swapDistY * swapDistMod
 
-    
     return curr, currCost
 
 def genPRGrid(dfg, numRows, numColumns):
     pg = PRGrid(numRows, numColumns)
 
     n_blocks = pg.scatterDFG(dfg)
-    pg, initTemp = selectTemp(pg, dfg, n_blocks, 2, 2)
+    pg, initTemp = selectTemp(pg, dfg, n_blocks, numRows, numColumns)
     iters_per_temp = round(10 * (n_blocks**1.33))
-    pg, _ = anneal(pg, dfg, iters_per_temp, 2, 2, initTemp)
+    pg, _ = anneal(pg, dfg, iters_per_temp, numRows, numColumns, initTemp)
 
     print("Unconnected Nets", unconnectedNetsCost(pg, dfg))
     print("LSU Congestion Cost", LSUCongestionCost(pg))
