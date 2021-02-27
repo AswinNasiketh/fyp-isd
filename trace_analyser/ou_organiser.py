@@ -120,6 +120,22 @@ def inputCongestionCost(pg:PRGrid):
 
     return cost
 
+def IOCongestionCost(pg:PRGrid, dfg:DFGraph):
+    wbNodes = [wb[1] for wb in dfg.final_reg_wbs.items()]
+
+    cost = 0
+
+    for row in pg.slots:
+        num_io = 0
+        for ou in row:
+            if ou != None:
+                if (ou.nodeID in wbNodes) or ("reg" in ou.opcode):
+                    num_io += 1
+        if num_io > 1:
+            cost += 1
+    
+    return cost
+
 def findNodePos(pg:PRGrid, nodeID):
     for rowNum, row in enumerate(pg.slots):
         for colNum, ou in enumerate(row):
@@ -200,8 +216,9 @@ def calculateTotalCost(pg, dfg):
 
     cost += gapsCost(pg, dfg)
     cost += LSUCongestionCost(pg)
-    cost += outputCongestionCost(pg, dfg)
-    cost += inputCongestionCost(pg)
+    # cost += outputCongestionCost(pg, dfg)
+    # cost += inputCongestionCost(pg)
+    cost += IOCongestionCost(pg, dfg)
     costUN, _, _ = unconnectedNetsCost(pg, dfg)
     cost += costUN
     return cost
@@ -265,10 +282,11 @@ def canExitAnneal(temp, pg, dfg):
 
     unetCost, _, _ = unconnectedNetsCost(pg, dfg)
     lsuCongCost = LSUCongestionCost(pg)
-    inpCongCost = inputCongestionCost(pg)
-    opCongCost = outputCongestionCost(pg, dfg)
+    # inpCongCost = inputCongestionCost(pg)
+    # opCongCost = outputCongestionCost(pg, dfg)
+    ioCongCost = IOCongestionCost(pg, dfg)
 
-    return (unetCost == 0) and (lsuCongCost == 0) and (inpCongCost == 0) and (opCongCost == 0)
+    return (unetCost == 0) and (lsuCongCost == 0) and (ioCongCost == 0)
 
 #*VPR temperature schedule
 def newTempModifier(propAccepted):
@@ -327,8 +345,9 @@ def genPRGrid(dfg, numRows, numColumns):
     unCost, newPG, UNs = unconnectedNetsCost(pg, dfg)
     print("Unconnected Nets", unCost)
     print("LSU Congestion Cost", LSUCongestionCost(newPG))
-    print("Output Congestion Cost", outputCongestionCost(newPG, dfg))
-    print("Input Congestion Cost", inputCongestionCost(newPG))
+    # print("Output Congestion Cost", outputCongestionCost(newPG, dfg))
+    # print("Input Congestion Cost", inputCongestionCost(newPG))
+    print("IO Congestion Cost", IOCongestionCost(newPG, dfg))
 
     print("Unconnected nets")
     for edge in UNs:
