@@ -12,9 +12,10 @@
 
 from trace_analyser.latency_mappings import get_ins_func_acc
 from trace_analyser.df_graph import DFGraph
+from trace_analyser.interconnect_stats import get_output_multiplicites
 import copy
 import random
-from math import exp
+from math import ceil, exp
 import statistics
 
 
@@ -38,7 +39,7 @@ class PRGrid:
         num_slots_filled = 0
         for i, node in enumerate(dfg.nodeLst):
             if (not "out" in node):
-                rowNum = num_slots_filled//self.n #*integer division
+                rowNum = num_slots_filled//self.m #*integer division
                 colNum = num_slots_filled % self.m
                 self.slots[rowNum][colNum] = PRUnit(node, i)
                 num_slots_filled += 1
@@ -67,8 +68,7 @@ def gapsCost(pg:PRGrid, dfg:DFGraph):
                     rightmost_used_col = colNum + 1
 
     slotsUsed = rightmost_used_col * highest_used_row
-    nOPRegs = len([node for node in dfg.nodeLst if (not "out" in node)])
-    minSlotsNeeded = len(dfg.nodeLst) - nOPRegs
+    minSlotsNeeded = len([node for node in dfg.nodeLst if (not "out" in node)])
     return slotsUsed - minSlotsNeeded
 
 def LSUCongestionCost(pg:PRGrid):
@@ -89,7 +89,7 @@ def LSUCongestionCost(pg:PRGrid):
     return cost
 
 def outputCongestionCost(pg:PRGrid, dfg:DFGraph):
-    opNodes = [wb[1] for wb in dfg.final_reg_wbs.items()]
+    wbNodes = [wb[1] for wb in dfg.final_reg_wbs.items()]
 
     cost = 0
     for row in pg.slots:
@@ -97,7 +97,7 @@ def outputCongestionCost(pg:PRGrid, dfg:DFGraph):
 
         for ou in row:
             if ou != None:
-                if ou.nodeID in opNodes:
+                if ou.nodeID in wbNodes:
                     num_ops += 1
         
         if num_ops > 1:
@@ -334,3 +334,33 @@ def genPRGrid(dfg, numRows, numColumns):
     for edge in UNs:
         print("edge from", edge.fromNode, "to", edge.toNode)
     return newPG
+
+
+def estimateGridSize(dfg: DFGraph):
+    #*min number of rows decided by max of number of inputs + number of writebacks, and number of LSUs
+    #*number of columns decided by avg output multiplicity * number of nodes with branching outputs
+
+    num_inputs = len([1 for node in dfg.nodeLst if "reg" in node])
+    num_wbs = len([1 for wb in dfg.final_reg_wbs.items()])
+    num_lsus = 0
+
+    for node in dfg.nodeLst:
+        if (not "reg" in node) and (not "lit" in node) and (not "out" in node):
+            ou_type = get_ins_func_acc(node)
+            if ou_type == "ls":
+                num_lsus += 1 
+
+    numRows = max(num_inputs + num_wbs, num_lsus)
+
+    numSlotsRequired = len([1 for node in dfg.nodeLst if not "out" in node])
+    minCols = ceil(numSlotsRequired/numRows)
+
+    nodeOPMults = get_output_multiplicites(dfg)
+    branchingOPNodes = len([1 for mult in nodeOPMults if mult > 1])
+
+    avgOPMult = statistics.mean(nodeOPMults)
+    numCols = minCols + round(branchingOPNodes*avgOPMult)
+
+    #*ensure there are enough slots to fit dfg
+
+    return numRows, numCols

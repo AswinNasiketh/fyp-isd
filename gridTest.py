@@ -9,7 +9,7 @@ from trace_analyser.sequence_profiler import *
 from trace_analyser.logger import *
 from trace_analyser.graph_visualiser import *
 import trace_analyser.interconnect_stats
-from trace_analyser.ou_organiser import genPRGrid
+from trace_analyser.ou_organiser import estimateGridSize, genPRGrid
 
 trace_file = 'trace_files/sim_ds_mod.trace'
 
@@ -63,8 +63,11 @@ def main():
                 break
 
             
-        
-    pg = genPRGrid(sample_seq.df_graph, 6, 6)
+        #todo: select grid size based on dfg node properties (node count, lsus, ops, inps, omps)
+        #todo: grid trimming
+    numRows, numCols = estimateGridSize(sample_seq.df_graph)
+    print(numRows, numCols)
+    pg = genPRGrid(sample_seq.df_graph, numRows, numCols)
     pg.visualise()
     plot_dfg(sample_seq.df_graph)
 
