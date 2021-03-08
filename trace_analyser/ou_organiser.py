@@ -10,6 +10,7 @@
 
 
 
+from trace_analyser.logger import print_line
 from trace_analyser.latency_mappings import get_ins_func_acc
 from trace_analyser.df_graph import DFGraph
 from trace_analyser.interconnect_stats import get_output_multiplicites
@@ -171,11 +172,13 @@ def findPath(pg:PRGrid, fromNodePos, toNodePos):
     
     #*path has been found => apply passthrough modifications
     if pathFound and (len(ptMods) > 0):
-        pg = copy.deepcopy(pg)
+        pgc = copy.deepcopy(pg)
         for r,c,mod in ptMods:
-            pg.slots[r][c] = mod #* copy of pg is being modified
-    
-    return pathFound, pg
+            pgc.slots[r][c] = mod #* copy of pg is being modified
+        return pathFound, pgc
+    else:
+
+        return pathFound, pg
 
 def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
     opNodes = dfg.get_output_nodes()
@@ -190,23 +193,24 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 
     cost = 0
     unconnectedNets = []
+    pgc = copy.deepcopy(pg)
     for edge in intermediateEdges:
         edgeMade = False
-        fromNodePos = findNodePos(pg, edge.fromNode)
-        toNodePos = findNodePos(pg, edge.toNode)
+        fromNodePos = findNodePos(pgc, edge.fromNode)
+        toNodePos = findNodePos(pgc, edge.toNode)
 
         #*check for right to left datapath
         if fromNodePos[0] == toNodePos[0] and ((fromNodePos[1] + 1) == toNodePos[1]):
             edgeMade = True
         else:
             #*check for datapath between layers
-            edgeMade, pg = findPath(pg, fromNodePos, toNodePos)
+            edgeMade, pgc = findPath(pgc, fromNodePos, toNodePos)
 
         if not edgeMade:
             cost += 1
             unconnectedNets.append(edge)
 
-    return cost, pg, unconnectedNets
+    return cost, pgc, unconnectedNets
 
 #* in random switching function allow x and y direction switches for all nodes, except pt nodes, which are deleted
 #*nodes for literals will need to be initialised when accelerator is started
@@ -214,7 +218,7 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 def calculateTotalCost(pg, dfg):
     cost = 0
 
-    cost += gapsCost(pg, dfg)
+    # cost += 0.2 * gapsCost(pg, dfg)
     cost += LSUCongestionCost(pg)
     # cost += outputCongestionCost(pg, dfg)
     # cost += inputCongestionCost(pg)
@@ -272,7 +276,7 @@ def selectTemp(pg: PRGrid, dfg: DFGraph, n_blocks, swapDistX, swapDistY):
         cost_list.append(cost)
     
     std = statistics.stdev(cost_list)
-    print("std", std)
+    # print("std", std)
     return pg, round(20 * std)
 
 def canExitAnneal(temp, pg, dfg):
@@ -329,8 +333,8 @@ def anneal(pg, dfg, iters_per_temp, initSwapDistX, initSwapDistY, initTemp):
         propAccepted = nAccepted/float(iters_per_temp)
         temp = newTempModifier(propAccepted) * temp
         swapDistMod = newSwapDistModifier(propAccepted)
-        swapDistX = swapDistX * swapDistMod
-        swapDistY = swapDistY * swapDistMod
+        swapDistX = round(swapDistX * swapDistMod)
+        swapDistY = round(swapDistY * swapDistMod)
 
     return curr, currCost
 
@@ -343,16 +347,16 @@ def genPRGrid(dfg, numRows, numColumns):
     pg, _ = anneal(pg, dfg, iters_per_temp, numRows, numColumns, initTemp)
 
     unCost, newPG, UNs = unconnectedNetsCost(pg, dfg)
-    print("Unconnected Nets", unCost)
-    print("LSU Congestion Cost", LSUCongestionCost(newPG))
-    # print("Output Congestion Cost", outputCongestionCost(newPG, dfg))
-    # print("Input Congestion Cost", inputCongestionCost(newPG))
-    print("IO Congestion Cost", IOCongestionCost(newPG, dfg))
+    lsuCost = LSUCongestionCost(newPG)
+    IOCost = IOCongestionCost(newPG, dfg)
+    # print("Unconnected Nets", unCost)
+    # print("LSU Congestion Cost", LSUCongestionCost(newPG))
+    # print("IO Congestion Cost", IOCongestionCost(newPG, dfg))
 
-    print("Unconnected nets")
-    for edge in UNs:
-        print("edge from", edge.fromNode, "to", edge.toNode)
-    return newPG
+    # print("Unconnected nets")
+    # for edge in UNs:
+    #     print("edge from", edge.fromNode, "to", edge.toNode)
+    return newPG, unCost, lsuCost, IOCost
 
 
 def estimateGridSize(dfg: DFGraph):
@@ -379,7 +383,5 @@ def estimateGridSize(dfg: DFGraph):
 
     avgOPMult = statistics.mean(nodeOPMults)
     numCols = minCols + round(branchingOPNodes*avgOPMult)
-
-    #*ensure there are enough slots to fit dfg
 
     return numRows, numCols
