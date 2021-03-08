@@ -8,7 +8,7 @@
 
 from trace_analyser.sequence_profiler import find_node_depth
 from trace_analyser.latency_mappings import get_ins_func_acc
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 def get_output_multiplicites(dfg):
     output_mutiplicites = []
@@ -83,52 +83,52 @@ def extract_stats(sequence_profiles):
 
     return output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, fb_path_num_lst
 
-def display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, fb_path_num_lst):
+# def display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, fb_path_num_lst):
 
-    fig, axs = plt.subplots(4,2)
-    # print(output_mutiplicites_lst)
+#     fig, axs = plt.subplots(4,2)
+#     # print(output_mutiplicites_lst)
 
-    n, bins, patches = axs[0, 0].hist(x=output_mutiplicites_lst, bins=range(20))
-    axs[0, 0].set_title('Node output edge multiplicites')
-    axs[0, 0].set(ylabel='frequency')
-    axs[0, 0].set_xticks(bins)
+#     n, bins, patches = axs[0, 0].hist(x=output_mutiplicites_lst, bins=range(20))
+#     axs[0, 0].set_title('Node output edge multiplicites')
+#     axs[0, 0].set(ylabel='frequency')
+#     axs[0, 0].set_xticks(bins)
 
 
-    n, bins, patches = axs[0, 1].hist(x=multi_branch_outputs_lst, bins=range(20))
-    axs[0, 1].set_title('Number of multi branch ouputs in a graph')
-    axs[0, 1].set(ylabel='frequency')
-    axs[0, 1].set_xticks(bins)
+#     n, bins, patches = axs[0, 1].hist(x=multi_branch_outputs_lst, bins=range(20))
+#     axs[0, 1].set_title('Number of multi branch ouputs in a graph')
+#     axs[0, 1].set(ylabel='frequency')
+#     axs[0, 1].set_xticks(bins)
 
-    n, bins, patches = axs[1, 0].hist(x=input_count_lst, bins=range(20))
-    axs[1, 0].set_title('Number of Inputs in a graph')
-    axs[1, 0].set(ylabel='frequency')
-    axs[1, 0].set_xticks(bins)
+#     n, bins, patches = axs[1, 0].hist(x=input_count_lst, bins=range(20))
+#     axs[1, 0].set_title('Number of Inputs in a graph')
+#     axs[1, 0].set(ylabel='frequency')
+#     axs[1, 0].set_xticks(bins)
 
-    n, bins, patches = axs[1, 1].hist(x=width_lst, bins=range(20))
-    axs[1, 1].set_title('Approximate max parallel operations in graph')
-    axs[1, 1].set(ylabel='frequency')
-    axs[1, 1].set_xticks(bins)
+#     n, bins, patches = axs[1, 1].hist(x=width_lst, bins=range(20))
+#     axs[1, 1].set_title('Approximate max parallel operations in graph')
+#     axs[1, 1].set(ylabel='frequency')
+#     axs[1, 1].set_xticks(bins)
 
-    n, bins, patches = axs[2, 0].hist(x=depth_lst, bins=range(20))
-    axs[2, 0].set_title('Max graph depth')
-    axs[2, 0].set(ylabel='frequency')
-    axs[2, 0].set_xticks(bins)
+#     n, bins, patches = axs[2, 0].hist(x=depth_lst, bins=range(20))
+#     axs[2, 0].set_title('Max graph depth')
+#     axs[2, 0].set(ylabel='frequency')
+#     axs[2, 0].set_xticks(bins)
 
-    n, bins, patches = axs[2, 1].hist(x=size_lst, bins=range(20))
-    axs[2, 1].set_title('Number of nodes in graph')
-    axs[2, 1].set(ylabel='frequency')
-    axs[2, 1].set_xticks(bins)
+#     n, bins, patches = axs[2, 1].hist(x=size_lst, bins=range(20))
+#     axs[2, 1].set_title('Number of nodes in graph')
+#     axs[2, 1].set(ylabel='frequency')
+#     axs[2, 1].set_xticks(bins)
 
-    n, bins, patches = axs[3, 0].hist(x=lsu_ops_lst, bins=range(20))
-    axs[3, 0].set_title('Number of load/store operations in a graph')
-    axs[3, 0].set(ylabel='frequency')
-    axs[3, 0].set_xticks(bins)
+#     n, bins, patches = axs[3, 0].hist(x=lsu_ops_lst, bins=range(20))
+#     axs[3, 0].set_title('Number of load/store operations in a graph')
+#     axs[3, 0].set(ylabel='frequency')
+#     axs[3, 0].set_xticks(bins)
 
-    n, bins, patches = axs[3, 1].hist(x=fb_path_num_lst, bins=range(20))
-    axs[3, 1].set_title('Number of feedback paths in a graph')
-    axs[3, 1].set(ylabel='frequency')
-    axs[3, 1].set_xticks(bins)
+#     n, bins, patches = axs[3, 1].hist(x=fb_path_num_lst, bins=range(20))
+#     axs[3, 1].set_title('Number of feedback paths in a graph')
+#     axs[3, 1].set(ylabel='frequency')
+#     axs[3, 1].set_xticks(bins)
 
-    fig.tight_layout()
+#     fig.tight_layout()
 
-    plt.show()
+#     plt.show()

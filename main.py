@@ -4,10 +4,11 @@ from trace_analyser.cycle_counter import *
 from trace_analyser.trace_utils import *
 from trace_analyser.sequence_profiler import *
 from trace_analyser.logger import *
-from trace_analyser.graph_visualiser import *
-import trace_analyser.interconnect_stats
+# from trace_analyser.graph_visualiser import *
+# import trace_analyser.interconnect_stats
+from trace_analyser.ou_organiser import estimateGridSize, genPRGrid
 
-trace_file = 'trace_files/sim_cm20.trace'
+trace_file = 'trace_files/sim_ds_mod.trace'
 
 max_hit_count = 64
 max_area = 64
@@ -26,7 +27,7 @@ print_line("Using trace", trace_file)
 
 
 def main():
-    branch_profile = BranchProfile(max_hit_count, max_area * 2) #area*2 is used for max_branch_dist heuristically because branch dist is in memory locations, and either 32, 64 or 16 bit instructions can be used. 
+    branch_profile = BranchProfile(max_hit_count, max_area)
     new_seq_addresses = None
     counters_shifted = False
     sequence_selector = SequenceSelector(max_area, max_num_accelerators, num_bprof_entries, max_hit_count)
@@ -54,7 +55,23 @@ def main():
 
             if new_seq_addresses != None:
                 branch_inst_addr, branch_target_addr = new_seq_addresses
+                print_line("New Sequence", branch_inst_addr, branch_target_addr)
+                print_line("Num Sequences Profiled", len(sequence_profiles))
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
+                #*PRGrid Generation Test
+                numRows, numCols = estimateGridSize(sequence_profiles[branch_inst_addr].df_graph)
+                newPG, unCost, lsuCost, IOCost = genPRGrid(sequence_profiles[branch_inst_addr].df_graph, numRows, numCols)
+
+                if unCost > 0 or lsuCost > 0 or IOCost > 0:                    
+                    print_line("PR Grid not found")
+                    print_line(branch_inst_addr, branch_target_addr)
+
+                    print_line("Unconnected Nets Cost", unCost)
+                    print_line("LSU Congestion Cost", lsuCost)
+                    print_line("IO Congestion Cost", IOCost)
+
+                    newPG.visualise()
+
 
             reconf_penalty = sequence_selector.update_accelerated_sequences(trace_line_obj, branch_profile, sequence_profiles)
 
@@ -77,9 +94,9 @@ def main():
     print_line("Profiling done")
     cycle_counter.print_cycles()
 
-    print_line("Gathering interconnect stats")
-    output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths = trace_analyser.interconnect_stats.extract_stats(sequence_profiles)
-    trace_analyser.interconnect_stats.display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths)
+    # print_line("Gathering interconnect stats")
+    # output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths = trace_analyser.interconnect_stats.extract_stats(sequence_profiles)
+    # trace_analyser.interconnect_stats.display_histograms(output_mutiplicites_lst, multi_branch_outputs_lst, input_count_lst, width_lst, depth_lst, size_lst, lsu_ops_lst, feedback_paths)
     # branch_profile.dump_profile()
 
 main()

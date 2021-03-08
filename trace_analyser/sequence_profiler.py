@@ -1,7 +1,6 @@
 from trace_analyser.df_graph import *
 from trace_analyser.latency_mappings import *
 from trace_analyser.logger import *
-from trace_analyser.graph_visualiser import plot_dfg
 
 class SequenceProfileEntry:
     def __init__(self, cpu_time, acc_time, area_cost, reconf_time, df_graph, initiation_interval):
