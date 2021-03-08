@@ -19,6 +19,7 @@ import random
 from math import ceil, exp
 import statistics
 
+random.seed('92125812f4159a7e8712862af1c77ddb60993dd49a448f869cea030809e2bbf1')
 
 class PRUnit:
     def __init__(self, opcode, nodeID):
@@ -56,21 +57,16 @@ class PRGrid:
             print()
 
 
-#*returns diffence between size of prgrid based on boundaries and number of slots needed by dfg
-def gapsCost(pg:PRGrid, dfg:DFGraph):
-    rightmost_used_col = 1
-    highest_used_row = 1
-    for rowNum, row in enumerate(pg.slots):
-        for colNum, ou in enumerate(row):
+#*returns number of passthroughs being used
+def gapsCost(pg:PRGrid):
+    cost = 0
+    for  row in pg.slots:
+        for ou in row:
             if ou != None:
-                highest_used_row = rowNum + 1
+                if "pt(" in ou.opcode:
+                    cost += 1
 
-                if (colNum + 1) > rightmost_used_col:
-                    rightmost_used_col = colNum + 1
-
-    slotsUsed = rightmost_used_col * highest_used_row
-    minSlotsNeeded = len([node for node in dfg.nodeLst if (not "out" in node)])
-    return slotsUsed - minSlotsNeeded
+    return cost
 
 def LSUCongestionCost(pg:PRGrid):
     cost = 0
@@ -149,6 +145,7 @@ def findPath(pg:PRGrid, fromNodePos, toNodePos):
 
     row, _ = fromNodePos
     ptMods = []
+    ptOpCode = "pt(" + str(fromNodePos[0]) + "," + str(fromNodePos[1]) + ")"
     while not pathFound:
         row += 1
         #*check if grid size exceeded
@@ -159,13 +156,24 @@ def findPath(pg:PRGrid, fromNodePos, toNodePos):
         if toNodePos[0] == row:
             pathFound = True
             break
+
+        #*check if next row has passthrough for fromNode already
+        ptFound = False
+        for ou in pg.slots[row]:
+            if ou != None:
+                if ou.opcode == ptOpCode:
+                    ptFound = True
+                    break
+        
+        if ptFound:
+            continue
         
         #* check if next row has empty slot for passthrough => path can be made (maybe)
         if (None in pg.slots[row]):
             for col, ou in enumerate(pg.slots[row]):
                 if ou == None:
                     #*mark slot as used passthrough so other paths cant use it
-                    ptMods.append((row, col, PRUnit("pt(" + str(fromNodePos[0]) + "," + str(fromNodePos[1]) + ")", -1)))
+                    ptMods.append((row, col, PRUnit(ptOpCode, -1)))
                     break
         else:
             break
@@ -177,7 +185,6 @@ def findPath(pg:PRGrid, fromNodePos, toNodePos):
             pgc.slots[r][c] = mod #* copy of pg is being modified
         return pathFound, pgc
     else:
-
         return pathFound, pg
 
 def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
@@ -218,7 +225,7 @@ def unconnectedNetsCost(pg:PRGrid, dfg:DFGraph):
 def calculateTotalCost(pg, dfg):
     cost = 0
 
-    # cost += 0.2 * gapsCost(pg, dfg)
+    cost += gapsCost(pg)
     cost += LSUCongestionCost(pg)
     # cost += outputCongestionCost(pg, dfg)
     # cost += inputCongestionCost(pg)
@@ -375,13 +382,13 @@ def estimateGridSize(dfg: DFGraph):
 
     numRows = max(num_inputs + num_wbs, num_lsus)
 
-    numSlotsRequired = len([1 for node in dfg.nodeLst if not "out" in node])
-    minCols = ceil(numSlotsRequired/numRows)
+    # numSlotsRequired = len([1 for node in dfg.nodeLst if not "out" in node])
+    # minCols = ceil(numSlotsRequired/numRows)
 
-    nodeOPMults = get_output_multiplicites(dfg)
-    branchingOPNodes = len([1 for mult in nodeOPMults if mult > 1])
+    # nodeOPMults = get_output_multiplicites(dfg)
+    # branchingOPNodes = len([1 for mult in nodeOPMults if mult > 1])
 
-    avgOPMult = statistics.mean(nodeOPMults)
-    numCols = minCols + round(branchingOPNodes*avgOPMult)
+    # avgOPMult = statistics.mean(nodeOPMults)
+    # numCols = minCols + round(branchingOPNodes*avgOPMult)
 
-    return numRows, numCols
+    return numRows

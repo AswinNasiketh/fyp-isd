@@ -11,7 +11,9 @@ from trace_analyser.ou_organiser import estimateGridSize, genPRGrid
 trace_file = 'trace_files/sim_ds_mod.trace'
 
 max_hit_count = 64
-max_area = 64
+max_area = 72
+num_rows = 12
+num_cols = 6
 max_num_accelerators = 4
 num_bprof_entries = 8
 
@@ -59,8 +61,8 @@ def main():
                 print_line("Num Sequences Profiled", len(sequence_profiles))
                 sequence_profiles[branch_inst_addr] = profile_seq(inst_mem, branch_target_addr, branch_inst_addr)
                 #*PRGrid Generation Test
-                numRows, numCols = estimateGridSize(sequence_profiles[branch_inst_addr].df_graph)
-                newPG, unCost, lsuCost, IOCost = genPRGrid(sequence_profiles[branch_inst_addr].df_graph, numRows, numCols)
+                numRows = estimateGridSize(sequence_profiles[branch_inst_addr].df_graph)
+                newPG, unCost, lsuCost, IOCost = genPRGrid(sequence_profiles[branch_inst_addr].df_graph, numRows, num_cols)
 
                 if unCost > 0 or lsuCost > 0 or IOCost > 0:                    
                     print_line("PR Grid not found")
