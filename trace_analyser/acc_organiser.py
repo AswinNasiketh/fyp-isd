@@ -16,7 +16,7 @@ class ReconfigurableFabric:
         self.numRows = numRows
         self.numCols = numCols
 
-        self.accelerators = {}
+        self.accelerators = {} #*keys will be branch instruction address of accelerator
         
         self.slots = []
         for i in range(numRows):
@@ -54,7 +54,8 @@ class ReconfigurableFabric:
             
             rowUseds.append(rowUsed)
 
-        rowUseds = [(g[0], len(g)) for _, g in groupby(rowUseds)]
+        rowUseds = [list(g) for _, g in groupby(rowUseds)]
+        rowUseds = [(g[0], len(g)) for g in rowUseds]
         rowsRequired = accToAddPG.n
 
         startRow = 0
@@ -129,6 +130,9 @@ class ReconfigurableFabric:
         self.accelerators[accID] = accToMove #*reassign in case a new object was created
 
         return self.numCols * (accToMove.endRow + 1 - accToMove.startRow) #returns num slots moved
+
+    def extraRowsRequired(self, rowsRequired):
+        return max(0,(self.findNextFreeRow() + rowsRequired - self.numRows))
 
 #*process for adding accelerators
 #*1. Get next free row

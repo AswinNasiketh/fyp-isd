@@ -1,15 +1,55 @@
+from trace_analyser.ou_organiser import estimateGridSize, genPRGrid, trimGrid
 from trace_analyser.df_graph import *
 from trace_analyser.latency_mappings import *
 from trace_analyser.logger import *
+from trace_analyser.rci_params import rf_num_cols, rf_num_rows
 
 class SequenceProfileEntry:
-    def __init__(self, cpu_time, acc_time, area_cost, reconf_time, df_graph, initiation_interval):
+    def __init__(self, cpu_time, acc_time, reconf_time, df_graph, initiation_interval):
         self.cpu_time = cpu_time
         self.acc_time = acc_time
-        self.area_cost = area_cost
+        
         self.reconf_time = reconf_time
         self.df_graph = df_graph
         self.initiation_interval =  initiation_interval
+
+        self.num_rows = None
+        self.pg = None
+        self.num_annealing_attempts = 0
+
+        self.MAX_ANNEALING_ATTEMPTS = 5
+    
+    def area_cost(self):
+        if self.num_rows != None:
+            return self.num_rows
+        else:
+            if self.num_annealing_attempts > self.MAX_ANNEALING_ATTEMPTS:
+                return -1
+            else:
+                nRows = estimateGridSize(self.df_graph)
+                if nRows > rf_num_rows: #if number of rows needed exceeds number of available rows, can't place accelerator
+                    self.num_annealing_attempts = self.MAX_ANNEALING_ATTEMPTS + 1
+                    return -1
+
+                newPG, unCost, lsuCost, IOCost = genPRGrid(self.df_graph, nRows, rf_num_cols)
+
+                if unCost > 0 or lsuCost > 0 or IOCost > 0:
+                    self.num_annealing_attempts += 1
+                    return -1
+                else:
+                    self.pg = trimGrid(newPG)
+                    self.num_rows = self.pg.n
+                    return self.num_rows
+
+    def print_profile(self):
+        print_line("CPU Time:", self.cpu_time)
+        print_line("Acc Time:", self.acc_time)
+
+        print_line("Reconf Time:", self.reconf_time)
+        print_line("Initiation Interval:", self.initiation_interval)
+        print_line("Num Rows PRGrid:", self.num_rows)
+        print_line("Num Annealing Attemps", self.num_annealing_attempts)
+
 
 def find_node_depth(node, graph, cpu = False, no_weightings = False):
     if "lit" in graph.nodeLst[node] or "reg" in graph.nodeLst[node]:
@@ -64,7 +104,7 @@ def profile_seq(inst_mem, start_addr, end_addr):
             maxDepthCpu = depth
     #fetch and decode latencies already included in mappings for CPU
 
-    area_cost = len(df_graph.nodeLst) #assume 1 unit area per FU required and 1 FU per instruction
+    # area_cost = len(df_graph.nodeLst) #assume 1 unit area per FU required and 1 FU per instruction
 
     reconf_time = len(df_graph.nodeLst) * FRAMES_PER_FU * RECONF_TIME_PER_FRAME * CPU_CLK_FREQ #in cycles
 
@@ -74,4 +114,4 @@ def profile_seq(inst_mem, start_addr, end_addr):
     max_init_interval = max(feedback_depths, default= 1)
 
 
-    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, area_cost, reconf_time, df_graph, max_init_interval)
+    return SequenceProfileEntry(maxDepthCpu, maxDepthAcc, reconf_time, df_graph, max_init_interval)

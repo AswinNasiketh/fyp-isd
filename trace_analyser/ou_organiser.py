@@ -12,11 +12,10 @@
 
 from trace_analyser.logger import print_line
 from trace_analyser.latency_mappings import get_ins_func_acc
-from trace_analyser.df_graph import DFGraph
-from trace_analyser.interconnect_stats import get_output_multiplicites
+from trace_analyser.df_graph import DFGraph, DFGraphEdge
 import copy
 import random
-from math import ceil, exp
+from math import exp
 import statistics
 
 random.seed('92125812f4159a7e8712862af1c77ddb60993dd49a448f869cea030809e2bbf1')
@@ -392,3 +391,27 @@ def estimateGridSize(dfg: DFGraph):
     # numCols = minCols + round(branchingOPNodes*avgOPMult)
 
     return numRows
+
+
+def trimGrid(pg: PRGrid):
+    #* remove rows full of Nones (on top and bottom)
+
+    trimmedGrid = []
+    for row in pg.slots:
+        rowUsed = False
+        for ou in row:
+            if ou != None:
+                rowUsed = True
+                break
+        
+        if rowUsed:
+            trimmedGrid.append(row)
+
+    pg.slots = trimmedGrid
+    pg.n = len(trimmedGrid)
+
+    return pg
+
+def tryConnectNet(pg: PRGrid, dfg: DFGraph, unconnectedNet: DFGraphEdge):
+    #*try move toNode beneath fromNode of unconnectedNet, creating passthroughs for the other input of toNode
+    pass
